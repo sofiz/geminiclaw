@@ -1,6 +1,6 @@
 # 🚀 Antigravity Command Center
 
-Welcome to the **Antigravity Command Center** repository. This project is a state-of-the-art, real-time dashboard and process orchestrator designed to spawn, control, and monitor autonomous AI agents powered by the **Antigravity SDK** and the **Go engine harness (`agy`)**. 
+Welcome to the **Antigravity Command Center** repository. This project is a state-of-the-art, real-time dashboard and process orchestrator designed to spawn, control, and monitor autonomous AI agents powered by the **Antigravity SDK** and the **Antigravity CLI (`agy`)**. 
 
 It delivers a premium, single-page, real-time experience featuring a collapsible terminal simulator, detailed thought tracking, dynamic file/image browsers, and comprehensive agent process management.
 
@@ -16,7 +16,7 @@ graph TD
     CC -->|Spawn/Control PIDs| PTY[PTYProcessManager]
     PTY -->|Background Thread| Runner[Agent Runner Loop]
     Runner -->|Launch Subprocess| Harness[Mock Harness / mock_harness.py]
-    Harness -->|Execute CLI| Agy[Go CLI Engine: agy]
+    Harness -->|Execute CLI| Agy[Antigravity CLI Engine: agy]
     Agy -->|Write Log| Trans[transcript.jsonl]
     Harness -->|Tail Log| Trans
     Harness -->|Stream Websocket| PTY
@@ -28,7 +28,7 @@ graph TD
 * **ASGI Server**: Daphne — Asynchronous gateway interface executing WebSocket streams and HTTP.
 * **Real-time Engine**: Django Channels — Directs asynchronous group broadcasts using in-memory channel layers.
 * **Process Manager**: Custom Thread Manager — Controls agent instances inside daemon threads via `asyncio` loops.
-* **Intermediate Harness**: `mock_harness.py` — Bridges the SDK agent protocol and compiled Go CLI `agy` subprocesses.
+* **Intermediate Harness**: `mock_harness.py` — Bridges the SDK agent protocol and compiled Antigravity CLI `agy` subprocesses.
 * **Frontend**: Vanilla HTML5 / Custom CSS — Modern premium dashboard with glassmorphism, responsive grids, and animations.
 * **Database**: SQLite3 (`db.sqlite3`) — Persistent storage of agent instance configurations and process statuses.
 
@@ -120,7 +120,7 @@ When executing complex, autonomous agentic operations, the quality of the develo
 | **Active Process Suspension** | Native **Pause (`SIGSTOP`)** and **Resume (`SIGCONT`)** controls mapped directly to buttons. | Only supports binary **Force-Kill** or termination. | If an agent is running an expensive or risky command, you can freeze it mid-run, inspect files, and resume execution without losing session history or stack states. |
 | **Thinking Trees & Tool Badges** | Parses markdown and tags into **collapsible thinking trees** and generates reactive, floating tool pills (e.g. `● Edit (file)`). | Prints unformatted raw text blocks and verbose command lists. | Minimizes cognitive fatigue. Verbose reasoning remains collapsed until needed, and tool executions are instantly scannable. |
 | **Workspace Navigation** | Integrated **recursive file and image explorer** with clickable markdown files and media preview panels. | Static terminal readouts or external IDE integration required. | Gives the operator instant visual confirmation of agent output (e.g., viewing generated screenshots, logs, and plans) in the same window. |
-| **Mobile Responsiveness** | Built as a **Progressive Web App (PWA)** with a fluid flex layout and touch-friendly controls. | Desktop-only static layout or standard raw terminal output. | Allows engineers to safely monitor, pause, or interact with long-running, critical server tasks from their smartphones while away from their desks. |
+| **Mobile Responsiveness** | Built as a **Progressive Web App (PWA)** with a fluid flex layout and touch-friendly controls. | Single conversation in a Messaging App  | Allows engineers to safely monitor, pause, or interact with long-running, critical server tasks from their smartphones |
 
 ---
 
