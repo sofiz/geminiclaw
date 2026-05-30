@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django database
+db.sqlite3
+db.sqlite3-journal
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Logs and transcripts
+*.log
+transcript.jsonl
+script_output.log
+
+# Playwright / browser profiles
+chrome-profile/
+chrome/venv/
+.pytest_cache/
+
+# OS specific files
+.DS_Store
+Thumbs.db

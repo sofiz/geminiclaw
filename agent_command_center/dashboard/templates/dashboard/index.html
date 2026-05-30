@@ -1,0 +1,2601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA / Mobile Web App Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Antigravity">
+    <link rel="apple-touch-icon" href="/pwa-icon.png">
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('SW registration successful with scope: ', registration.scope);
+                }).catch(function(err) {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+    </script>
+
+    <title>Gemini Claw | Antigravity Orchestrator</title>
+
+    
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#070A13',
+                            card: 'rgba(15, 23, 42, 0.45)',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            emerald: '#10B981',
+                            cyan: '#06B6D4',
+                            violet: '#8B5CF6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        html, body {
+            height: 100% !important;
+            height: var(--vv-height, 100dvh) !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Safe area adjustments for mobile notch and home indicator */
+        header {
+            padding-top: env(safe-area-inset-top) !important;
+            height: calc(4rem + env(safe-area-inset-top)) !important;
+        }
+
+        #chat-input-container {
+            padding-bottom: max(0.35rem, env(safe-area-inset-bottom)) !important;
+        }
+
+        #instances-list {
+            padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+        }
+
+        @media (min-width: 768px) {
+            #chat-input-container {
+                padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            #sidebar {
+                padding-top: env(safe-area-inset-top) !important;
+                padding-bottom: env(safe-area-inset-bottom) !important;
+            }
+        }
+
+        /* Prevent long words, links, or file paths from breaking layout / causing horizontal scroll */
+        #chat-timeline {
+            overflow-x: hidden !important;
+        }
+
+        #chat-timeline,
+        .agent-bubble-content,
+        .thinking-inner,
+        .thinking-details,
+        .agent-bubble-thoughts,
+        #chat-timeline pre,
+        #chat-timeline code,
+        #chat-timeline span,
+        #chat-timeline p,
+        #chat-timeline a,
+        #chat-timeline div {
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: normal !important;
+        }
+
+        /* Specifically break extremely long links or paths that have no spaces */
+        .agent-bubble-content a,
+        .agent-bubble-content span,
+        #chat-timeline span,
+        #chat-timeline a {
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: normal !important;
+        }
+
+        /* Prevent pre/code scroll wrapper from overflowing */
+        #chat-timeline pre {
+            max-width: 100% !important;
+            white-space: pre-wrap !important;
+            word-break: normal !important;
+            overflow-x: auto !important;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Glassmorphism card standard */
+        .glass-card {
+            background: rgba(15, 22, 42, 0.55);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Background glow filters */
+        .ambient-glow-cyan {
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.14) 0%, rgba(0,0,0,0) 70%);
+        }
+        .ambient-glow-violet {
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(0,0,0,0) 70%);
+        }
+
+        /* Message slide animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-chat-bubble {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* Hide scrollbars but keep functionality */
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Disable zoom actions and ensure quick touch response */
+        button, input, select, textarea, a, summary, .glass-card, [role="button"] {
+            touch-action: manipulation;
+        }
+        
+        /* Disable automatic text zooming across different device orientations */
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        /* Gear animation hover */
+        .animate-spin-hover {
+            transition: transform 0.3s ease-in-out;
+        }
+        button:hover .animate-spin-hover {
+            transform: rotate(45deg);
+        }
+    </style>
+
+</head>
+<body class="bg-brand-dark text-slate-100 font-sans h-screen h-[100dvh] relative overflow-hidden select-none">
+
+    <!-- Ambient glowing backgrounds -->
+    <div class="absolute w-[600px] h-[600px] rounded-full top-[-10%] left-[-10%] ambient-glow-cyan pointer-events-none z-0"></div>
+    <div class="absolute w-[700px] h-[700px] rounded-full bottom-[-15%] right-[-10%] ambient-glow-violet pointer-events-none z-0"></div>
+    <div class="absolute w-[500px] h-[500px] rounded-full top-[30%] right-[20%] ambient-glow-cyan/40 pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex flex-col h-full overflow-hidden">
+        
+        <!-- Header -->
+        <header class="relative h-16 flex items-center justify-between px-4 md:px-6 border-b border-brand-border bg-slate-950/40 backdrop-blur-md" style="z-index: 40;">
+            <div class="flex items-center space-x-3">
+                <!-- Hamburger Menu Button (visible on mobile only) -->
+                <button onclick="toggleSidebar(true)" class="md:hidden text-slate-400 hover:text-white p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition mr-1 flex items-center justify-center">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <i data-lucide="infinity" class="w-5 h-5 text-white animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 id="header-agent-name" class="text-sm md:text-md font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400 whitespace-nowrap">
+                        GEMINI CLAW
+                    </h1>
+                    <p id="header-agent-subtitle" class="text-[8px] md:text-[10px] text-slate-500 font-mono tracking-widest uppercase truncate max-w-[160px] sm:max-w-none">Autonomous Command Console / Messaging Interface</p>
+                </div>
+            </div>
+
+            <!-- Agent Status & Controls (moved to header) -->
+            <div class="flex items-center space-x-3 min-w-0">
+                <div id="active-agent-badge" class="hidden items-center space-x-1.5 md:space-x-2 min-w-0">
+                    <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0 animate-pulse" id="active-agent-status-dot"></span>
+                    <span id="active-agent-title" class="text-xs font-bold tracking-wide truncate max-w-[120px] sm:max-w-[180px] md:max-w-none">Select Agent</span>
+                </div>
+                <div id="no-agent-badge" class="text-xs text-slate-400 flex items-center">
+                    <i data-lucide="message-square" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
+                    <span>Messaging Channel Unhooked</span>
+                </div>
+
+                <!-- Process Status Controls -->
+                <div id="terminal-controls" class="hidden flex items-center gap-1.5 sm:gap-2 shrink-0 select-none">
+                    <!-- Gear Management Dropdown -->
+                    <div class="relative">
+                        <button onclick="toggleManageMenu()" id="btn-manage-gear" class="bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 w-9 h-9 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center cursor-pointer shadow-lg hover:shadow-cyan-500/10" title="Manage Agent">
+                            <i data-lucide="settings" class="w-4 h-4 animate-spin-hover"></i>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="manage-dropdown-menu" class="hidden absolute right-0 mt-2 w-80 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl p-3.5 space-y-3" style="z-index: 50;">
+                            <!-- Active Context Section inside Gear -->
+                            <div id="gear-context-panel" class="border border-cyan-500/20 bg-cyan-500/5 rounded-xl p-3 select-none flex flex-col gap-2.5">
+                                <div class="flex items-center justify-between border-b border-cyan-500/10 pb-1.5 mb-0.5">
+                                    <span class="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-1">
+                                        <i data-lucide="box" class="w-3.5 h-3.5 text-cyan-400 animate-pulse"></i>
+                                        Active Context
+                                    </span>
+                                    <span id="active-agent-pid" class="text-[9px] font-mono text-cyan-500 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                                        PID: -
+                                    </span>
+                                </div>
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Workspace Path</span>
+                                        <span id="context-workspace-path" class="font-mono text-slate-300 truncate font-semibold cursor-pointer hover:text-cyan-400 transition" onclick="openWorkspaceFilesModal(); toggleManageMenu(false)" title="Click to view workspace files">/root/workspace</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="bg-white/5 border border-white/5 p-2 rounded-lg flex flex-col">
+                                            <span class="text-[9px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                <i data-lucide="cpu" class="w-3 h-3 text-slate-500"></i>
+                                                Last Tool
+                                            </span>
+                                            <span id="context-last-tool" class="font-mono text-slate-200 font-bold mt-1 truncate">None</span>
+                                        </div>
+                                        <div class="bg-white/5 border border-white/5 p-2 rounded-lg flex flex-col">
+                                            <span class="text-[9px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                <i data-lucide="file-code" class="w-3 h-3 text-slate-500"></i>
+                                                Files
+                                            </span>
+                                            <span id="context-files-count" class="font-mono text-slate-200 font-bold mt-1">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-cyan-500/10 pt-2 flex flex-col gap-1.5">
+                                        <span class="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Current Agent Tokens</span>
+                                        <div class="grid grid-cols-2 gap-2 text-[10px]">
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Total:</span>
+                                                <span id="context-total-tokens" class="font-mono text-cyan-300 font-bold">0</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Prompt:</span>
+                                                <span id="context-prompt-tokens" class="font-mono text-slate-300 font-bold">0</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Response:</span>
+                                                <span id="context-response-tokens" class="font-mono text-slate-300 font-bold">0</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Thoughts:</span>
+                                                <span id="context-thoughts-tokens" class="font-mono text-slate-300 font-bold">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-t border-white/5 pt-1.5 space-y-1">
+                                <button onclick="controlAgent('resume'); toggleManageMenu(false)" id="btn-resume" class="w-full text-left bg-transparent hover:bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 px-2.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-2.5 cursor-pointer" title="Resume Agent">
+                                    <i data-lucide="play" class="w-4 h-4"></i>
+                                    <span>Resume Agent</span>
+                                </button>
+                                <button onclick="controlAgent('pause'); toggleManageMenu(false)" id="btn-pause" class="w-full text-left bg-transparent hover:bg-amber-500/10 text-amber-400 hover:text-amber-300 px-2.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-2.5 cursor-pointer" title="Pause Agent">
+                                    <i data-lucide="pause" class="w-4 h-4"></i>
+                                    <span>Pause Agent</span>
+                                </button>
+                                <button onclick="openWorkspaceFilesModal(); toggleManageMenu(false)" id="btn-workspace-files" class="w-full text-left bg-transparent hover:bg-cyan-500/10 text-cyan-400 hover:text-cyan-300 px-2.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-2.5 cursor-pointer" title="Workspace Files">
+                                    <i data-lucide="folder-open" class="w-4 h-4"></i>
+                                    <span>Workspace Files</span>
+                                </button>
+                                <button onclick="controlAgent('kill'); toggleManageMenu(false)" id="btn-kill" class="w-full text-left bg-transparent hover:bg-red-500/10 text-red-400 hover:text-red-300 px-2.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-2.5 cursor-pointer" title="Force-Kill Agent">
+                                    <i data-lucide="stop-circle" class="w-4 h-4"></i>
+                                    <span>Force-Kill</span>
+                                </button>
+                                <button onclick="clearChatTimeline(); toggleManageMenu(false)" class="w-full text-left bg-transparent hover:bg-white/5 text-slate-300 hover:text-white px-2.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-2.5 cursor-pointer" title="Reset Log">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>Reset Log</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 md:space-x-6">
+                <!-- Live diagnostic stats -->
+                <div class="hidden lg:flex items-center space-x-4 text-xs font-mono text-slate-400 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span>LINK: SECURE</span>
+                    </div>
+                    <div class="w-px h-3 bg-white/10"></div>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                        <span>MESSAGES ROUTING: PERSISTENT</span>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-2">
+                    <!-- Secure Logout System -->
+
+                    <form id="logout-form" action="{% url 'logout' %}" method="post" class="hidden">
+                        {% csrf_token %}
+                    </form>
+                    <button onclick="document.getElementById('logout-form').submit()" class="bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-white/5 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all duration-200 flex items-center space-x-1 md:space-x-1.5 cursor-pointer" title="Secure Logout">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">LOGOUT</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Body Grid -->
+        <main class="flex-1 flex overflow-hidden relative">
+            
+            <!-- Backdrop overlay for mobile drawer -->
+            <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-20 hidden transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
+
+            <!-- Left Sidebar: Agent Registrar (Slide-out drawer on mobile) -->
+            <section id="sidebar" class="fixed inset-y-0 left-0 z-30 w-[280px] sm:w-80 border-r border-brand-border flex flex-col bg-brand-dark/95 backdrop-blur-xl transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:bg-brand-dark/95">
+                
+                <!-- Spawn Form -->
+                <div class="p-4 border-b border-brand-border">
+                    <h2 class="text-xs font-bold tracking-widest text-emerald-400 uppercase mb-3 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5 mr-1.5"></i>
+                            Spawn New Agent
+                        </span>
+                        <!-- Close / Telemetry buttons -->
+                        <div class="flex items-center space-x-1.5">
+                            <!-- Quotas & Usage Modal Toggle Button -->
+                            <button type="button" onclick="openUsageModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/20 transition flex items-center justify-center cursor-pointer" title="Model Quotas & Usage">
+                                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <!-- Close Button for Mobile Drawer -->
+                            <button type="button" onclick="toggleSidebar(false)" class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/20 transition flex items-center justify-center cursor-pointer">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </h2>
+                    <form id="spawn-form" class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Instance Name</label>
+                            <input type="text" id="agent-name" required placeholder="e.g. Security Specialist" class="w-full text-xs text-white p-2.5 rounded-xl glass-input placeholder-slate-600" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Workspace Path</label>
+                            <input type="text" id="agent-workspace" required placeholder="e.g. /root/work-env" class="w-full text-xs font-mono text-white p-2.5 rounded-xl glass-input placeholder-slate-600" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Execution Flag</label>
+                            <select id="agent-model" class="w-full text-xs text-white p-2.5 rounded-xl glass-input bg-brand-dark cursor-pointer">
+                                <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash (Default)</option>
+                                <option value="gemini-3.1-pro">Gemini 3.1 Pro (Ultra)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg shadow-emerald-950/40 border border-emerald-500/20 transition-all flex items-center justify-center space-x-1.5">
+                            <i data-lucide="zap" class="w-3.5 h-3.5 animate-bounce"></i>
+                            <span>Spawn & Orchestrate</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Registries -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div class="px-4 py-3 flex items-center justify-between border-b border-brand-border bg-slate-950/20">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Agent Instances</span>
+                        <span id="instance-count" class="bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-400">0</span>
+                    </div>
+                    
+                    <div id="instances-list" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+                        <div class="text-center py-8 text-xs text-slate-600">
+                            Loading orchestrations...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dummy container to prevent JS errors -->
+                <div id="sidebar-usage-container" class="hidden"></div>
+                
+                <!-- Sidebar Mobile Logout -->
+                <div class="p-4 border-t border-brand-border bg-slate-950/40 md:hidden shrink-0">
+                    <button onclick="document.getElementById('logout-form').submit()" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-red-950/20">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span>SIGNOUT SESSION</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Center Panel: Messaging Window Console -->
+            <section class="flex-1 flex flex-col bg-brand-dark/20 relative overflow-hidden" style="z-index: 10;">
+                
+
+
+                <!-- Chat Dialogues Stream View -->
+                <div class="flex-1 flex flex-col relative overflow-hidden bg-slate-950/15">
+                    
+                    <!-- Pinned Workspace Context Header -->
+                    <div id="agent-context-panel" class="hidden"></div>
+                    
+                    <!-- Bubble list container -->
+                    <div id="chat-timeline" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-5">
+                        <!-- Dynamic chat messages go here -->
+                    </div>
+
+                    <!-- Image Preview Bar -->
+                    <div id="image-preview-container" class="hidden px-4 py-2 border-t border-brand-border bg-slate-950/60 backdrop-blur-md flex items-center space-x-3 z-10 shrink-0">
+                        <div class="relative w-12 h-12 rounded-xl border border-brand-border overflow-hidden bg-slate-900 flex-shrink-0">
+                            <img id="image-preview" class="w-full h-full object-cover" />
+                            <button onclick="clearSelectedImage()" class="absolute top-0.5 right-0.5 bg-red-600/80 hover:bg-red-600 text-white rounded-full p-0.5 shadow-md flex items-center justify-center transition duration-150">
+                                <i data-lucide="x" class="w-2.5 h-2.5"></i>
+                            </button>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p id="image-preview-filename" class="text-xs font-semibold text-slate-200 truncate"></p>
+                            <p id="image-preview-size" class="text-[10px] text-slate-500 font-mono"></p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Message Input Box -->
+                    <div id="chat-input-container" class="hidden px-4 py-3 md:px-6 md:py-4 bg-transparent z-10 shrink-0 select-none">
+                        <div class="max-w-3xl mx-auto w-full relative">
+                            <div class="flex items-center bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2.5 shadow-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/10 transition-all duration-300">
+                                <!-- Plus upload button -->
+                                <button id="btn-upload-image" onclick="triggerImageUpload()" class="text-slate-400 hover:text-white p-2.5 rounded-full hover:bg-white/5 transition shrink-0 mr-1" title="Upload Image">
+                                    <i data-lucide="plus" class="w-5 h-5"></i>
+                                </button>
+                                <input type="file" id="image-upload-input" accept="image/*" class="hidden" onchange="handleImageSelection(event)" />
+                                
+                                <!-- Chat input -->
+                                <input type="text" id="chat-input" onkeydown="handleInputKeyPress(event)" placeholder="Ask Gemini..." class="flex-1 bg-transparent text-sm md:text-base text-white placeholder-slate-500 focus:outline-none min-w-0 py-1" />
+                                
+                                <!-- Microphone icon -->
+                                <button class="text-slate-400 hover:text-white p-2.5 rounded-full hover:bg-white/5 transition shrink-0" title="Voice Input">
+                                    <i data-lucide="mic" class="w-5 h-5"></i>
+                                </button>
+                                
+                                <!-- Send button -->
+                                <button id="btn-send-chat" onclick="sendChatMessage()" class="bg-gradient-to-tr from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white p-2.5 rounded-full shadow-md transition shrink-0 ml-1.5 flex items-center justify-center">
+                                    <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frosted Overlay when unselected (Gemini Inspired Intro) -->
+                    <div id="terminal-overlay" class="absolute inset-0 bg-brand-dark/95 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center select-none overflow-y-auto">
+                        <!-- Ambient glow inside overlay -->
+                        <div class="absolute w-[400px] h-[400px] rounded-full top-[10%] left-[10%] ambient-glow-cyan pointer-events-none z-0 opacity-40"></div>
+                        <div class="absolute w-[500px] h-[500px] rounded-full bottom-[10%] right-[10%] ambient-glow-violet pointer-events-none z-0 opacity-30"></div>
+
+                        <div class="relative z-10 flex flex-col items-center max-w-xl w-full">
+                            <!-- Beautiful Astroid Sparkle / Star (Gemini Style) -->
+                            <div class="mb-6 drop-shadow-[0_0_35px_rgba(34,211,238,0.25)] animate-pulse">
+                                <svg class="w-20 h-20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <linearGradient id="gemini-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#22D3EE" />
+                                            <stop offset="35%" stop-color="#818CF8" />
+                                            <stop offset="70%" stop-color="#F472B6" />
+                                            <stop offset="100%" stop-color="#FBBF24" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z" fill="url(#gemini-grad)"/>
+                                </svg>
+                            </div>
+                            
+                            <h2 class="text-3xl md:text-5xl font-semibold tracking-tight text-white mb-3 font-sans">
+                                What should we focus on?
+                            </h2>
+                            <p class="text-sm md:text-base text-slate-400 max-w-md mx-auto mb-8 font-sans leading-relaxed">
+                                Select an active Antigravity agent or spawn a new instance to begin your autonomous execution journey.
+                            </p>
+
+                            <!-- Mini shortcut selector list of agents inside overlay -->
+                            <div class="w-full max-w-md bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl backdrop-blur-md text-left">
+                                <h3 class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest mb-3.5 flex items-center justify-between border-b border-white/5 pb-2.5">
+                                    <span>Orchestrated Agents</span>
+                                    <span class="text-slate-500 text-[10px] font-normal font-sans">Available Sessions</span>
+                                </h3>
+                                <div id="overlay-instances-list" class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                                    <div class="text-slate-500 text-xs italic text-center py-6">No active agents. Use the sidebar to spawn one!</div>
+                                </div>
+                                <button onclick="toggleSidebar(true)" class="mt-4 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-bold py-3 px-4 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Spawn New Agent Instance</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+        </main>
+    </div>
+
+    <!-- Workspace Files Viewer Modal -->
+    <div id="workspace-files-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm select-text">
+        <div class="w-full max-w-3xl h-[80vh] flex flex-col rounded-2xl glass-card overflow-hidden shadow-2xl animate-chat-bubble">
+            
+            <!-- Modal Header -->
+            <div class="h-14 border-b border-brand-border flex items-center justify-between px-6 bg-slate-950/40">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="folder-search" class="w-5 h-5 text-cyan-400"></i>
+                    <h3 class="text-sm font-bold tracking-wide">Workspace Artifact Files</h3>
+                </div>
+                <button onclick="closeWorkspaceFilesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/20 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- File List Sidebar -->
+                <div class="w-1/3 border-r border-brand-border flex flex-col bg-slate-950/20">
+                    <div class="p-3 border-b border-brand-border bg-white/5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Markdown File</span>
+                    </div>
+                    <div id="modal-files-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                        <!-- Loaded md files list -->
+                        <div class="text-center py-8 text-xs text-slate-600">No markdown files found.</div>
+                    </div>
+                </div>
+                
+                <!-- File Content Viewer -->
+                <div class="w-2/3 flex flex-col bg-brand-dark/10">
+                    <div id="modal-file-header" class="h-10 border-b border-brand-border flex items-center px-4 bg-slate-950/10 justify-between select-none">
+                        <span id="modal-selected-file-title" class="text-xs font-mono font-bold text-cyan-400">Select a file from the list</span>
+                        <span class="text-[9px] font-mono text-slate-600 uppercase tracking-widest">Reader Mode</span>
+                    </div>
+                    <div id="modal-file-content" class="flex-1 overflow-y-auto p-5 font-sans text-slate-300 text-xs leading-relaxed whitespace-pre-wrap select-text selection:bg-cyan-500/25">
+                        <!-- Markdown text content -->
+                        <div class="text-center py-20 text-slate-500">
+                            <i data-lucide="file-text" class="w-12 h-12 text-slate-600 mx-auto mb-3 animate-pulse"></i>
+                            Choose an implementation plan, task list, or walkthrough to read.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Quotas & Usage Modal -->
+    <div id="usage-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm select-text" onclick="if(event.target === this) closeUsageModal()">
+        <div class="w-full max-w-xl flex flex-col rounded-3xl glass-card overflow-hidden shadow-2xl animate-chat-bubble border border-white/10" onclick="event.stopPropagation()">
+            
+            <!-- Modal Header -->
+            <div class="h-16 border-b border-brand-border flex items-center justify-between px-6 bg-slate-950/60 backdrop-blur-md">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/5">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Model Quotas & Usage</h3>
+                        <p class="text-[9px] text-slate-500 font-mono tracking-widest uppercase">Real-Time Telemetry &amp; Cost Control</p>
+                    </div>
+                </div>
+                <button onclick="closeUsageModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 transition duration-200 cursor-pointer flex items-center justify-center">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+                <!-- Status Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-cyan-500/5 border border-cyan-500/10 px-4 py-3.5 rounded-2xl flex items-center justify-between transition hover:border-cyan-500/20 duration-200">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <i data-lucide="clock" class="w-4 h-4 text-cyan-400 shrink-0 animate-pulse"></i>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-[9px] text-slate-500 font-mono uppercase tracking-wider font-bold">Reset Window</span>
+                                <span class="text-[10px] text-slate-400 truncate">API rate window</span>
+                            </div>
+                        </div>
+                        <span id="usage-reset-countdown" class="font-mono text-cyan-400 font-extrabold text-sm tracking-wider shrink-0 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/10 ml-2">--s</span>
+                    </div>
+
+                    <div class="bg-emerald-500/5 border border-emerald-500/10 px-4 py-3.5 rounded-2xl flex items-center justify-between transition hover:border-emerald-500/20 duration-200">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <i data-lucide="wallet" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-[9px] text-slate-500 font-mono uppercase tracking-wider font-bold">Est. Total Cost</span>
+                                <span class="text-[10px] text-slate-400 truncate">Cumulative session</span>
+                            </div>
+                        </div>
+                        <span id="usage-estimated-cost" class="font-mono text-emerald-400 font-extrabold text-sm tracking-wider shrink-0 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/10 ml-2">$0.00000</span>
+                    </div>
+                </div>
+
+                <!-- Model Usage Cards -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between border-b border-brand-border pb-2">
+                        <h4 class="text-[10px] font-mono font-bold text-slate-400 tracking-widest uppercase">Quota Allocation &amp; Usage</h4>
+                        <span class="text-[8px] font-mono text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">Per-Model Telemetry</span>
+                    </div>
+                    
+                    <!-- Placeholder if no agent running -->
+                    <div id="usage-no-agent-placeholder" class="text-center py-10 text-xs text-slate-500 font-sans border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+                        <i data-lucide="info" class="w-8 h-8 text-slate-600 mx-auto mb-2 animate-pulse"></i>
+                        No active agent telemetry. Spawn or select an agent to see real-time usage.
+                    </div>
+                    
+                    <div id="sidebar-usage-list" class="space-y-3 hidden">
+                        <!-- Dynamically generated model cards -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-950/40 border-t border-brand-border flex items-center justify-between text-[10px] text-slate-500 font-mono uppercase select-none">
+                <span class="flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    Link Status: Secure
+                </span>
+                <span>Active Orchestration telemetry</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript dynamic operations -->
+    <script>
+        function safeCreateIcons() {
+            if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.error("Lucide icon generation failed safely:", e);
+                }
+            }
+        }
+        safeCreateIcons();
+
+        // Dynamic visual viewport height adjustment for mobile keyboards
+        function initVisualViewport() {
+            const vv = window.visualViewport;
+            if (vv) {
+                const handleResize = () => {
+                    const height = vv.height;
+                    document.documentElement.style.setProperty('--vv-height', `${height}px`);
+                    // Scroll to bottom of chat if keyboard opens
+                    const chatTimeline = document.getElementById('chat-timeline');
+                    if (chatTimeline) {
+                        chatTimeline.scrollTop = chatTimeline.scrollHeight;
+                    }
+                    // Reset page scrolling that browsers trigger automatically
+                    window.scrollTo(0, 0);
+                };
+                vv.addEventListener('resize', handleResize);
+                vv.addEventListener('scroll', handleResize);
+                window.addEventListener('load', handleResize);
+                handleResize();
+            }
+
+            // Lock document window scroll to (0,0) to prevent the viewport from shifting when keyboard opens
+            window.addEventListener('scroll', () => {
+                if (window.scrollY !== 0 || window.scrollX !== 0) {
+                    window.scrollTo(0, 0);
+                }
+            });
+        }
+        initVisualViewport();
+
+        // State variables
+        let activeAgentId = null;
+        let activeAgentWorkspace = null;
+        let consoleSocket = null;
+        let thoughtsSocket = null;
+        let globalSocket = null;
+        let currentThoughtCard = null;
+
+        let lastBubbleType = null; // 'user' or 'agent'
+        let currentAgentBubbleDiv = null;
+
+        // Custom ANSI to HTML parser converter
+        function ansiToHtml(text) {
+            let html = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            
+            const colors = {
+                '1;31': 'text-red-400 font-bold',
+                '31': 'text-red-400',
+                '1;32': 'text-emerald-400 font-bold',
+                '32': 'text-emerald-400',
+                '1;33': 'text-amber-400 font-bold',
+                '33': 'text-amber-400',
+                '1;34': 'text-blue-400 font-bold',
+                '34': 'text-blue-400',
+                '1;36': 'text-cyan-400 font-bold',
+                '36': 'text-cyan-400',
+                '1;30': 'text-slate-500 font-bold',
+                '30': 'text-slate-500',
+                '0': 'text-slate-200'
+            };
+
+            html = html.replace(/\x1b\[([0-9;]+)m/g, (match, code) => {
+                if (colors[code]) {
+                    return `</span><span class="${colors[code]}">`;
+                }
+                if (code === '0') {
+                    return `</span><span class="text-slate-200">`;
+                }
+                return '</span><span>';
+            });
+
+            // Keep track of normalized paths already processed in Markdown-style images to avoid double rendering
+            let processedMarkdownPaths = new Set();
+            const normalizePath = (p) => p.trim().replace(/^file:\/\/\/?/, '/').replace(/\/+/g, '/');
+
+            // Parse Markdown-style images: ![alt](path)
+            html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, path) => {
+                let cleanPath = path.trim();
+                processedMarkdownPaths.add(normalizePath(cleanPath));
+
+                let imgSrc = cleanPath;
+                if (!cleanPath.startsWith('http://') && !cleanPath.startsWith('https://')) {
+                    let absolutePath = cleanPath;
+                    if (!cleanPath.startsWith('/') && !cleanPath.startsWith('file://')) {
+                        // Relative path, resolve against active agent workspace
+                        let ws = activeAgentWorkspace || "";
+                        if (ws) {
+                            absolutePath = ws + '/' + cleanPath;
+                        }
+                    } else if (cleanPath.startsWith('file://')) {
+                        absolutePath = cleanPath.replace('file://', '');
+                    }
+                    imgSrc = `/api/file/?path=${encodeURIComponent(absolutePath)}`;
+                }
+                return `</span>
+<div class="mt-3 my-2 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-lg shadow-md hover:border-cyan-500/30 transition duration-300 select-none">
+    <img src="${imgSrc}" alt="${alt}" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[350px] select-text" onclick="window.open('${imgSrc}', '_blank')"/>
+    <div class="text-[9px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+        <span class="font-bold text-cyan-500">${alt || 'Embedded Image'}</span>
+        <span class="truncate max-w-[250px]" title="${cleanPath}">${cleanPath}</span>
+    </div>
+</div>
+<span class="text-slate-200">`;
+            });
+
+            // Parse raw image path/URL references in text nodes safely without breaking HTML tags
+            let parts = html.split(/(<[^>]+>)/g);
+            for (let i = 0; i < parts.length; i += 2) {
+                let textNode = parts[i];
+                if (!textNode) continue;
+                
+                const imgRefRegex = /(?<=^|[\s'"()<>])(?:file:\/\/\/?)?([^\s'"()<>]+?\.(?:png|jpg|jpeg|gif|webp))(?=$|[\s'"()<>])/gi;
+                
+                textNode = textNode.replace(imgRefRegex, (match, filepath) => {
+                    let cleanPath = filepath.trim();
+                    if (processedMarkdownPaths.has(normalizePath(cleanPath))) {
+                        return match; // Skip replacement to prevent duplicate image block
+                    }
+
+                    let imgSrc = cleanPath;
+                    let isWebUrl = cleanPath.startsWith('http://') || cleanPath.startsWith('https://');
+                    
+                    if (!isWebUrl) {
+                        let absolutePath = cleanPath;
+                        if (!cleanPath.startsWith('/') && !cleanPath.startsWith('file://')) {
+                            // Relative path, resolve against active agent workspace
+                            let ws = activeAgentWorkspace || "";
+                            if (ws) {
+                                absolutePath = ws + '/' + cleanPath;
+                            }
+                        } else if (cleanPath.startsWith('file://')) {
+                            absolutePath = cleanPath.replace('file://', '');
+                        }
+                        imgSrc = `/api/file/?path=${encodeURIComponent(absolutePath)}`;
+                    }
+                    
+                    return `</span><span class="text-cyan-400 font-bold underline hover:text-cyan-300 transition cursor-pointer" onclick="window.open('${imgSrc}', '_blank')">${cleanPath}</span>
+<div class="mt-3 my-2 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-lg shadow-md hover:border-cyan-500/30 transition duration-300 select-none">
+    <img src="${imgSrc}" alt="Generated Image" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[350px] select-text" onclick="window.open('${imgSrc}', '_blank')"/>
+    <div class="text-[9px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+        <span class="font-bold text-cyan-500">${isWebUrl ? 'Web Image' : 'Image Mentioned'}</span>
+        <span class="truncate max-w-[250px]" title="${cleanPath}">${cleanPath}</span>
+    </div>
+</div>
+<span class="text-slate-200">`;
+                });
+                
+                parts[i] = textNode;
+            }
+            html = parts.join('');
+
+            return `<span class="text-slate-200">${html}</span>`;
+        }
+
+        // Refined parser for agent response bubbles featuring full markdown and ANSI rendering
+        function parseAgentResponse(text) {
+            if (!text) return "";
+
+            // 0. Auto-close streaming code blocks if number of occurrences of ``` is odd
+            let oddTripleBackticks = (text.match(/```/g) || []).length % 2 !== 0;
+            if (oddTripleBackticks) {
+                text += "\n```";
+            }
+
+            // 1. Escape HTML of raw content first to allow safe manual HTML tag injections
+            let escaped = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // 2. Extract and preserve code blocks & images in placeholders to protect them from line-by-line parsing
+            let blocks = [];
+            let placeholderIndex = 0;
+            let processedText = escaped;
+
+            // Code blocks: ```lang\ncode```
+            const codeBlockRegex = /```([a-zA-Z0-9+#_-]*)\n([\s\S]*?)```/gm;
+            processedText = processedText.replace(codeBlockRegex, (match, lang, code) => {
+                let displayLang = lang ? lang.toUpperCase() : 'CODE';
+                const placeholder = `__CODE_BLOCK_PLACEHOLDER_${placeholderIndex++}__`;
+                blocks.push({
+                    placeholder: placeholder,
+                    html: `<div class="bg-slate-950/70 border border-brand-border rounded-xl overflow-hidden my-3 font-sans shadow-lg select-text">
+                        <div class="flex items-center justify-between px-4 py-1.5 border-b border-brand-border bg-slate-950/30 select-none">
+                            <span class="text-[9px] font-mono font-bold text-cyan-400 tracking-wider">${displayLang}</span>
+                            <span class="text-[8px] font-mono text-slate-600">SYSTEM CONTAINER</span>
+                        </div>
+                        <pre class="p-3.5 font-mono text-[10.5px] text-cyan-300/90 overflow-x-auto whitespace-pre leading-relaxed select-text">${code.trim()}</pre>
+                    </div>`
+                });
+                return placeholder;
+            });
+
+            // Fallback Code blocks
+            const fallbackCodeBlockRegex = /```([\s\S]*?)```/gm;
+            processedText = processedText.replace(fallbackCodeBlockRegex, (match, code) => {
+                const placeholder = `__CODE_BLOCK_PLACEHOLDER_${placeholderIndex++}__`;
+                blocks.push({
+                    placeholder: placeholder,
+                    html: `<div class="bg-slate-950/70 border border-brand-border rounded-xl overflow-hidden my-3 font-sans shadow-lg select-text">
+                        <div class="flex items-center justify-between px-4 py-1.5 border-b border-brand-border bg-slate-950/30 select-none">
+                            <span class="text-[9px] font-mono font-bold text-cyan-400 tracking-wider">CODE</span>
+                            <span class="text-[8px] font-mono text-slate-600">SYSTEM CONTAINER</span>
+                        </div>
+                        <pre class="p-3.5 font-mono text-[10.5px] text-cyan-300/90 overflow-x-auto whitespace-pre leading-relaxed select-text">${code.trim()}</pre>
+                    </div>`
+                });
+                return placeholder;
+            });
+
+            // Parse Markdown-style images: ![alt](path)
+            let processedMarkdownPaths = new Set();
+            const normalizePath = (p) => p.trim().replace(/^file:\/\/\/?/, '/').replace(/\/+/g, '/');
+
+            processedText = processedText.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, path) => {
+                let cleanPath = path.trim();
+                processedMarkdownPaths.add(normalizePath(cleanPath));
+
+                let imgSrc = cleanPath;
+                if (!cleanPath.startsWith('http://') && !cleanPath.startsWith('https://')) {
+                    let absolutePath = cleanPath;
+                    if (!cleanPath.startsWith('/') && !cleanPath.startsWith('file://')) {
+                        let ws = activeAgentWorkspace || "";
+                        if (ws) {
+                            absolutePath = ws + '/' + cleanPath;
+                        }
+                    } else if (cleanPath.startsWith('file://')) {
+                        absolutePath = cleanPath.replace('file://', '');
+                    }
+                    imgSrc = `/api/file/?path=${encodeURIComponent(absolutePath)}`;
+                }
+                const placeholder = `__IMAGE_BLOCK_PLACEHOLDER_${placeholderIndex++}__`;
+                blocks.push({
+                    placeholder: placeholder,
+                    html: `
+<div class="mt-3 my-2 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-lg shadow-md hover:border-cyan-500/30 transition duration-300 select-none">
+    <img src="${imgSrc}" alt="${alt}" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[350px] select-text" onclick="window.open('${imgSrc}', '_blank')"/>
+    <div class="text-[9px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+        <span class="font-bold text-cyan-500">${alt || 'Embedded Image'}</span>
+        <span class="truncate max-w-[250px]" title="${cleanPath}">${cleanPath}</span>
+    </div>
+</div>`
+                });
+                return placeholder;
+            });
+
+            // Parse raw image path/URL references in text nodes safely
+            let parts = processedText.split(/(<[^>]+>)/g);
+            for (let i = 0; i < parts.length; i += 2) {
+                let textNode = parts[i];
+                if (!textNode) continue;
+                
+                const imgRefRegex = /(?<=^|[\s'"()<>])(?:file:\/\/\/?)?([^\s'"()<>]+?\.(?:png|jpg|jpeg|gif|webp))(?=$|[\s'"()<>])/gi;
+                textNode = textNode.replace(imgRefRegex, (match, filepath) => {
+                    let cleanPath = filepath.trim();
+                    if (processedMarkdownPaths.has(normalizePath(cleanPath))) {
+                        return match;
+                    }
+
+                    let imgSrc = cleanPath;
+                    let isWebUrl = cleanPath.startsWith('http://') || cleanPath.startsWith('https://');
+                    
+                    if (!isWebUrl) {
+                        let absolutePath = cleanPath;
+                        if (!cleanPath.startsWith('/') && !cleanPath.startsWith('file://')) {
+                            let ws = activeAgentWorkspace || "";
+                            if (ws) {
+                                absolutePath = ws + '/' + cleanPath;
+                            }
+                        } else if (cleanPath.startsWith('file://')) {
+                            absolutePath = cleanPath.replace('file://', '');
+                        }
+                        imgSrc = `/api/file/?path=${encodeURIComponent(absolutePath)}`;
+                    }
+                    
+                    const placeholder = `__IMAGE_BLOCK_PLACEHOLDER_${placeholderIndex++}__`;
+                    blocks.push({
+                        placeholder: placeholder,
+                        html: `<span class="text-cyan-400 font-bold underline hover:text-cyan-300 transition cursor-pointer" onclick="window.open('${imgSrc}', '_blank')">${cleanPath}</span>
+<div class="mt-3 my-2 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-lg shadow-md hover:border-cyan-500/30 transition duration-300 select-none">
+    <img src="${imgSrc}" alt="Generated Image" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[350px] select-text" onclick="window.open('${imgSrc}', '_blank')"/>
+    <div class="text-[9px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+        <span class="font-bold text-cyan-500">${isWebUrl ? 'Web Image' : 'Image Mentioned'}</span>
+        <span class="truncate max-w-[250px]" title="${cleanPath}">${cleanPath}</span>
+    </div>
+</div>`
+                    });
+                    return placeholder;
+                });
+                parts[i] = textNode;
+            }
+            processedText = parts.join('');
+
+            // Helper function for inline markdown rendering
+            function parseInline(inlineText) {
+                if (!inlineText) return "";
+
+                // Bold: **text**
+                inlineText = inlineText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+
+                // Italics: *text* or _text_
+                inlineText = inlineText.replace(/\*(.*?)\*/g, '<em class="text-slate-200 italic">$1</em>');
+                inlineText = inlineText.replace(/_(.*?)_/g, '<em class="text-slate-200 italic">$1</em>');
+
+                // Inline Code: `code`
+                inlineText = inlineText.replace(/`([^`]+)`/g, '<code class="bg-slate-950/80 text-cyan-300 border border-white/5 rounded px-1.5 py-0.5 font-mono text-[10px]">$1</code>');
+
+                return inlineText;
+            }
+
+            // 3. Process line-by-line block-level Markdown
+            let lines = processedText.split('\n');
+            let parsedLines = lines.map(line => {
+                let trimmed = line.trim();
+
+                // If it is a placeholder, return as-is
+                if (trimmed.startsWith('__CODE_BLOCK_PLACEHOLDER_') || trimmed.startsWith('__IMAGE_BLOCK_PLACEHOLDER_')) {
+                    return line;
+                }
+
+                let isBlock = false;
+                let blockHtml = line;
+
+                // Headers: # Header
+                if (/^#\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^#\s+(.*)$/, (match, content) => {
+                        return `<h1 class="text-base font-bold text-white border-b border-brand-border pb-1 mb-2.5 mt-2">${parseInline(content)}</h1>`;
+                    });
+                } else if (/^##\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^##\s+(.*)$/, (match, content) => {
+                        return `<h2 class="text-xs font-bold text-cyan-400 mb-1.5 mt-3 flex items-center"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-cyan-400 mr-1 shrink-0"></i>${parseInline(content)}</h2>`;
+                    });
+                } else if (/^###\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^###\s+(.*)$/, (match, content) => {
+                        return `<h3 class="text-[11px] font-bold text-slate-200 mb-1 mt-2 flex items-center"><i data-lucide="minus" class="w-3 h-3 text-slate-400 mr-1 shrink-0"></i>${parseInline(content)}</h3>`;
+                    });
+                }
+                // Checklist items: - [x] or - [ ]
+                else if (/^[ ]*-\s+\[([xX])\]\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^[ ]*-\s+\[([xX])\]\s+(.*)$/, (match, checked, content) => {
+                        return `<div class="flex items-start space-x-2 my-1.5"><input type="checkbox" checked disabled class="accent-emerald-500 mt-0.5"><span class="text-slate-400 line-through">${parseInline(content)}</span></div>`;
+                    });
+                } else if (/^[ ]*-\s+\[([ \/]*)]\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^[ ]*-\s+\[([ \/]*)]\s+(.*)$/, (match, unchecked, content) => {
+                        return `<div class="flex items-start space-x-2 my-1.5"><input type="checkbox" disabled class="accent-cyan-500 mt-0.5"><span class="text-slate-300">${parseInline(content)}</span></div>`;
+                    });
+                }
+                // Standard lists: - or *
+                else if (/^[ ]*-\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^[ ]*-\s+(.*)$/, (match, content) => {
+                        return `<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-500 mt-0.5">•</span><span class="text-slate-300">${parseInline(content)}</span></div>`;
+                    });
+                } else if (/^[ ]*\*\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^[ ]*\*\s+(.*)$/, (match, content) => {
+                        return `<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-500 mt-0.5">•</span><span class="text-slate-300">${parseInline(content)}</span></div>`;
+                    });
+                }
+                // Numbered lists: 1. Item
+                else if (/^[ ]*([0-9]+)\.[ ]+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^[ ]*([0-9]+)\.[ ]+(.*)$/, (match, num, content) => {
+                        return `<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-400 font-mono font-bold text-[10px] mt-0.5 shrink-0">${num}.</span><span class="text-slate-300">${parseInline(content)}</span></div>`;
+                    });
+                }
+                // Blockquotes: > Text
+                else if (/^&gt;\s+(.*)$/.test(line)) {
+                    isBlock = true;
+                    blockHtml = line.replace(/^&gt;\s+(.*)$/, (match, content) => {
+                        return `<blockquote class="border-l-2 border-slate-700 pl-3 my-2 text-slate-400 italic">${parseInline(content)}</blockquote>`;
+                    });
+                }
+
+                // If not a block-level item, return as paragraph text line
+                if (!isBlock) {
+                    if (trimmed === "") {
+                        return `<div class="h-2"></div>`;
+                    }
+                    let isTerminalLine = line.includes('└') || line.includes('█') || line.includes('░') || line.includes('■') || line.includes('□') || line.includes('───');
+                    if (isTerminalLine) {
+                        return `<div class="font-mono text-[11px] leading-normal whitespace-pre text-slate-300 min-h-[1em]">${parseInline(line)}</div>`;
+                    }
+                    return `<div class="text-slate-300 leading-relaxed min-h-[1em]">${parseInline(line)}</div>`;
+                }
+
+                return blockHtml;
+            });
+
+            let html = parsedLines.join('\n');
+
+            // 4. Parse ANSI color codes on the processed HTML
+            const colors = {
+                '1;31': 'text-red-400 font-bold',
+                '31': 'text-red-400',
+                '1;32': 'text-emerald-400 font-bold',
+                '32': 'text-emerald-400',
+                '1;33': 'text-amber-400 font-bold',
+                '33': 'text-amber-400',
+                '1;34': 'text-blue-400 font-bold',
+                '34': 'text-blue-400',
+                '1;36': 'text-cyan-400 font-bold',
+                '36': 'text-cyan-400',
+                '1;30': 'text-slate-500 font-bold',
+                '30': 'text-slate-500',
+                '0': 'text-slate-200'
+            };
+
+            let ansiParsed = html.replace(/\x1b\[([0-9;]+)m/g, (match, code) => {
+                if (colors[code]) {
+                    return `</span><span class="${colors[code]}">`;
+                }
+                if (code === '0') {
+                    return `</span><span class="text-slate-200">`;
+                }
+                return '</span><span>';
+            });
+            
+            let finalHtml = `<span class="text-slate-300">${ansiParsed}</span>`;
+
+            // 5. Restore the placeholders (code blocks, images, raw links)
+            blocks.forEach(block => {
+                finalHtml = finalHtml.replace(block.placeholder, block.html);
+            });
+
+            return `<div class="space-y-1">${finalHtml}</div>`;
+        }
+
+        // On load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAgents();
+            connectGlobalSocket();
+
+            // Spawn form
+            document.getElementById('spawn-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('agent-name').value;
+                const workspace = document.getElementById('agent-workspace').value;
+                const model = document.getElementById('agent-model').value;
+
+                fetch('/api/agent/spawn/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name, workspace: workspace, model_name: model})
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        document.getElementById('agent-name').value = '';
+                        document.getElementById('agent-workspace').value = '';
+                        
+                        // Select spawned
+                        selectAgent(res.agent_id);
+                        fetchAgents();
+                    } else {
+                        alert("Spawn error: " + res.error);
+                    }
+                })
+                .catch(err => console.error("Error spawning:", err));
+            });
+        });
+
+        // Global socket sync updates
+        function connectGlobalSocket() {
+            const loc = window.location;
+            const wsStart = loc.protocol === 'https:' ? 'wss://' : 'ws://';
+            const endpoint = wsStart + loc.host + '/ws/agent/global/';
+            
+            globalSocket = new WebSocket(endpoint);
+            globalSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                if (data.action === 'refresh') {
+                    fetchAgents();
+                    if (activeAgentId) {
+                        updateActiveAgentBadge();
+                    }
+                }
+            };
+            globalSocket.onclose = function() {
+                setTimeout(connectGlobalSocket, 2000);
+            };
+        }
+
+        // Fetch agents
+        function fetchAgents() {
+            fetch('/api/agents/')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('instances-list');
+                document.getElementById('instance-count').innerText = data.agents.length;
+
+                if (data.agents.length === 0) {
+                    container.innerHTML = `<div class="text-center py-8 text-xs text-slate-600">No registered instances.</div>`;
+                    
+                    const overlayContainer = document.getElementById('overlay-instances-list');
+                    if (overlayContainer) {
+                        overlayContainer.innerHTML = `<div class="text-slate-500 text-xs italic text-center py-6">No active agents. Use the sidebar to spawn one!</div>`;
+                    }
+                    return;
+                }
+
+                let html = '';
+                let overlayHtml = '';
+                data.agents.forEach(agent => {
+                    const isActive = agent.id === activeAgentId;
+                    
+                    let statusColor = 'bg-slate-500';
+                    if (agent.status === 'running') {
+                        statusColor = 'bg-emerald-500 animate-pulse';
+                    } else if (agent.status === 'paused') {
+                        statusColor = 'bg-amber-500';
+                    } else if (agent.status === 'terminated') {
+                        statusColor = 'bg-red-500';
+                    }
+
+                    html += `
+                        <div onclick="selectAgent('${agent.id}')" class="group relative p-3 rounded-xl cursor-pointer transition-all duration-200 ${isActive ? 'glass-card border-emerald-500/30 bg-emerald-500/5' : 'bg-brand-card hover:bg-slate-900/60 border border-brand-border'}">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2 h-2 rounded-full ${statusColor}"></span>
+                                    <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition">${agent.name}</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); deleteAgent('${agent.id}')" class="text-slate-600 hover:text-red-400 p-0.5 rounded transition">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="text-[9px] font-mono text-slate-500 truncate mb-1">
+                                Path: ${agent.workspace}
+                            </div>
+                            <div class="flex items-center justify-between mt-2 pt-1 border-t border-white/5">
+                                <span class="text-[9px] font-mono text-cyan-500">${agent.model_name}</span>
+                                <span class="text-[9px] font-mono text-slate-600">PID: ${agent.pid || '-'}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    overlayHtml += `
+                        <div onclick="selectAgent('${agent.id}')" class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-cyan-500/35 hover:bg-white/10 transition cursor-pointer select-none">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <span class="w-2.5 h-2.5 rounded-full ${statusColor} shrink-0"></span>
+                                <div class="truncate">
+                                    <div class="text-sm font-bold text-slate-200">${agent.name}</div>
+                                    <div class="text-[10px] font-mono text-slate-500 truncate">${agent.workspace}</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/10 shrink-0">${agent.model_name}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                
+                const overlayContainer = document.getElementById('overlay-instances-list');
+                if (overlayContainer) {
+                    overlayContainer.innerHTML = overlayHtml;
+                }
+                
+                safeCreateIcons();
+            })
+            .catch(err => console.error("Error listing:", err));
+        }
+
+
+        // Delete agent
+        function deleteAgent(agentId) {
+            if (!confirm("Are you sure you want to force-kill and delete this instance?")) return;
+            
+            fetch('/api/agent/control/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({agent_id: agentId, action: 'delete'})
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    if (activeAgentId === agentId) {
+                        activeAgentId = null;
+                        disconnectSockets();
+                        
+                        const contextPanel = document.getElementById('agent-context-panel');
+                        if (contextPanel) contextPanel.classList.add('hidden');
+                        
+                        const usageContainer = document.getElementById('sidebar-usage-container');
+                        if (usageContainer) usageContainer.classList.add('hidden');
+                        
+                        const usageList = document.getElementById('sidebar-usage-list');
+                        if (usageList) usageList.classList.add('hidden');
+                        const usagePlaceholder = document.getElementById('usage-no-agent-placeholder');
+                        if (usagePlaceholder) usagePlaceholder.classList.remove('hidden');
+                        
+                        const overlay = document.getElementById('terminal-overlay');
+                        if (overlay) overlay.classList.remove('hidden');
+                        
+                        const controls = document.getElementById('terminal-controls');
+                        if (controls) controls.classList.add('hidden');
+                        
+                        const inputContainer = document.getElementById('chat-input-container');
+                        if (inputContainer) inputContainer.classList.add('hidden');
+                        
+                        // Suggestions row removed
+                        
+                        const activeBadge = document.getElementById('active-agent-badge');
+                        if (activeBadge) activeBadge.classList.add('hidden');
+                        
+                        const noBadge = document.getElementById('no-agent-badge');
+                        if (noBadge) noBadge.classList.remove('hidden');
+
+                        const headerName = document.getElementById('header-agent-name');
+                        if (headerName) headerName.innerText = "GEMINI CLAW";
+                        
+                        const headerSubtitle = document.getElementById('header-agent-subtitle');
+                        if (headerSubtitle) headerSubtitle.innerText = "AUTONOMOUS COMMAND CONSOLE / MESSAGING INTERFACE";
+                    }
+                    fetchAgents();
+                }
+            });
+        }
+
+        // Select agent instance
+        function selectAgent(agentId) {
+            if (activeAgentId === agentId) {
+                // If already active, just make sure to close mobile sidebar
+                toggleSidebar(false);
+                return;
+            }
+            activeAgentId = agentId;
+
+            // Clear chat timeline and state
+            const timeline = document.getElementById('chat-timeline');
+            if (timeline) timeline.innerHTML = '';
+            
+            currentThoughtCard = null;
+            lastBubbleType = null;
+            currentAgentBubbleDiv = null;
+
+            // Show active context and usage UIs
+            const usageContainer = document.getElementById('sidebar-usage-container');
+            if (usageContainer) usageContainer.classList.remove('hidden');
+
+            // Reset context & usage values to loading defaults
+            const flashTokensEl = document.getElementById('model-flash-tokens');
+            if (flashTokensEl) flashTokensEl.innerText = "0";
+            const flashProgEl = document.getElementById('model-flash-progress');
+            if (flashProgEl) flashProgEl.style.width = "0%";
+            
+            const proTokensEl = document.getElementById('model-pro-tokens');
+            if (proTokensEl) proTokensEl.innerText = "0";
+            const proProgEl = document.getElementById('model-pro-progress');
+            if (proProgEl) proProgEl.style.width = "0%";
+
+            latestUsageData = null;
+
+            const countdownEl = document.getElementById('usage-reset-countdown');
+            if (countdownEl) countdownEl.innerText = "--s";
+
+            const estCostEl = document.getElementById('usage-estimated-cost');
+            if (estCostEl) estCostEl.innerText = "$0.00000";
+
+            const usageList = document.getElementById('sidebar-usage-list');
+            if (usageList) {
+                usageList.innerHTML = '';
+                usageList.classList.add('hidden');
+            }
+            const usagePlaceholder = document.getElementById('usage-no-agent-placeholder');
+            if (usagePlaceholder) {
+                usagePlaceholder.classList.remove('hidden');
+            }
+            
+            document.getElementById('context-workspace-path').innerText = "Loading...";
+            document.getElementById('context-last-tool').innerText = "None";
+            document.getElementById('context-files-count').innerText = "0";
+
+            const ctxTotal = document.getElementById('context-total-tokens');
+            if (ctxTotal) ctxTotal.innerText = "0";
+            const ctxPrompt = document.getElementById('context-prompt-tokens');
+            if (ctxPrompt) ctxPrompt.innerText = "0";
+            const ctxResp = document.getElementById('context-response-tokens');
+            if (ctxResp) ctxResp.innerText = "0";
+            const ctxThoughts = document.getElementById('context-thoughts-tokens');
+            if (ctxThoughts) ctxThoughts.innerText = "0";
+
+            // Open panels
+            const overlay = document.getElementById('terminal-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            
+            const controls = document.getElementById('terminal-controls');
+            if (controls) controls.classList.remove('hidden');
+            
+            const inputContainer = document.getElementById('chat-input-container');
+            if (inputContainer) {
+                inputContainer.classList.remove('hidden');
+                inputContainer.style.display = 'flex';
+            }
+            
+            // Suggestions row removed
+            
+            const noBadge = document.getElementById('no-agent-badge');
+            if (noBadge) noBadge.classList.add('hidden');
+            
+            const activeBadge = document.getElementById('active-agent-badge');
+            if (activeBadge) {
+                activeBadge.classList.remove('hidden');
+                activeBadge.style.display = 'flex';
+            }
+
+            fetchAgents();
+            updateActiveAgentBadge();
+            connectSockets(agentId);
+            
+            // Dismiss drawer on mobile screen after selecting
+            toggleSidebar(false);
+        }
+
+        function updateActiveAgentBadge() {
+            if (!activeAgentId) return;
+
+            fetch('/api/agents/')
+            .then(r => r.json())
+            .then(data => {
+                const agent = data.agents.find(a => a.id === activeAgentId);
+                if (agent) {
+                    activeAgentWorkspace = agent.workspace;
+                    const title = document.getElementById('active-agent-title');
+                    if (title) title.innerText = agent.name;
+                    
+                    const headerName = document.getElementById('header-agent-name');
+                    if (headerName) headerName.innerText = agent.name.toUpperCase();
+                    
+                    const headerSubtitle = document.getElementById('header-agent-subtitle');
+                    if (headerSubtitle) headerSubtitle.innerText = `${agent.model_name.toUpperCase()} / ACTIVE INSTANCE`;
+
+                    const pid = document.getElementById('active-agent-pid');
+                    if (pid) pid.innerText = `PID: ${agent.pid || '-'}`;
+
+                    const dot = document.getElementById('active-agent-status-dot');
+                    if (dot) {
+                        dot.className = "w-2.5 h-2.5 rounded-full shrink-0";
+                        
+                        const btnResume = document.getElementById('btn-resume');
+                        const btnPause = document.getElementById('btn-pause');
+
+                        if (agent.status === 'running') {
+                            dot.classList.add('bg-emerald-500', 'animate-pulse');
+                            if (btnResume) btnResume.classList.add('hidden');
+                            if (btnPause) btnPause.classList.remove('hidden');
+                        } else if (agent.status === 'paused') {
+                            dot.classList.add('bg-amber-500');
+                            if (btnResume) btnResume.classList.remove('hidden');
+                            if (btnPause) btnPause.classList.add('hidden');
+                        } else if (agent.status === 'terminated') {
+                            dot.classList.add('bg-red-500');
+                            if (btnResume) btnResume.classList.add('hidden');
+                            if (btnPause) btnPause.classList.add('hidden');
+                        } else {
+                            dot.classList.add('bg-slate-500');
+                            if (btnResume) btnResume.classList.add('hidden');
+                            if (btnPause) btnPause.classList.add('hidden');
+                        }
+                    }
+                }
+            });
+        }
+
+        // Manage agent settings dropdown helpers
+        function toggleManageMenu(show) {
+            const menu = document.getElementById('manage-dropdown-menu');
+            if (!menu) return;
+            if (show === undefined) {
+                menu.classList.toggle('hidden');
+            } else if (show) {
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('manage-dropdown-menu');
+            const gearBtn = document.getElementById('btn-manage-gear');
+            if (menu && gearBtn && !menu.contains(event.target) && !gearBtn.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function cleanConsoleNoise(text) {
+            let lines = text.split('\n');
+            let cleanLines = [];
+            
+            lines.forEach(line => {
+                let trimmed = line.trim();
+                
+                // Exclude the execution echo commands
+                if (trimmed.includes("agy --dangerously-skip-permissions") || trimmed.includes("/root/.local/bin/agy")) return;
+                if (trimmed.startsWith("echo \"Received goal request:")) return;
+                
+                // Exclude system terminal integrations and bracket paste switches
+                if (trimmed.includes("[?2004l") || trimmed.includes("[?2004h")) return;
+                if (trimmed.includes("]3008;") || trimmed.includes("]0;")) return;
+                
+                // Exclude shell prompt lines
+                if (trimmed.includes("root@") && (trimmed.includes("#") || trimmed.includes("$"))) return;
+                if (trimmed.includes("root@") && trimmed.includes("root@")) return;
+                if (trimmed.match(/bash-[0-9.]+#[ ]*$/)) return;
+                if (trimmed === 'agy>' || trimmed.startsWith("agy>") || trimmed === '>') return;
+                
+                // Exclude interactive CLI startup noise, ASCII art banners, and TUI login selection prompts
+                if (trimmed.includes("Welcome to the Antigravity CLI") || trimmed.includes("Signing in...") || trimmed.includes("not signed in")) return;
+                if (trimmed.includes("Google OAuth") || trimmed.includes("Use a Google Cloud project") || trimmed.includes("login method")) return;
+                if (trimmed.includes("[Use arrow keys to navigate") || trimmed.includes("? for shortcuts")) return;
+                if (trimmed.includes("▄▀▀") || trimmed.includes("▀▀▀") || trimmed.includes("▀▀▄")) return;
+                if (trimmed === "") return;
+                
+                // String-level cleanup of remaining escape codes and startup CSI sequences
+                let cleanLine = line
+                    .replace(/\x1b\[[^a-zA-Z]*[a-ln-zA-Z]/g, '') // Clear CSI commands (except color 'm')
+                    .replace(/\x1b\[\?2004[hl]/g, '')
+                    .replace(/\x1b\]3008;[^\x07\x1b]*(\x07|\x1b\\)/g, '')
+                    .replace(/\x1b\]0;[^\x07\x1b]*(\x07|\x1b\\)/g, '')
+                    .replace(/root@[a-zA-Z0-9_-]+:.*[#$]/g, '')
+                    .replace(/bash-[0-9.]+#[ ]*/g, '');
+                
+                if (cleanLine.trim()) {
+                    cleanLines.push(cleanLine);
+                }
+            });
+            
+            return cleanLines.join('\n');
+        }
+
+        let consoleHistoryReceived = false;
+        let activeThoughtDetailsDiv = null;
+        let consoleBuffer = "";
+        let consoleBufferFlushedLength = 0;
+        let activeThoughtsElement = null;
+        let activeThoughtMetadata = null;
+        let expectingThoughtDescription = false;
+        
+        let previousResponsesCombined = "";
+        let streamBufferThisTurn = "";
+        let deduplicationComplete = true;
+
+        function collectPreviousResponses() {
+            let previousAgentTexts = [];
+            document.querySelectorAll('.agent-bubble-content').forEach(content => {
+                let text = content.innerText.trim();
+                if (text) {
+                    previousAgentTexts.push(text);
+                }
+            });
+            previousResponsesCombined = previousAgentTexts.join('\n').trim();
+            streamBufferThisTurn = "";
+            deduplicationComplete = true;
+        }
+        
+        function stripAnsi(text) {
+            return text.replace(/\x1b\[[^a-zA-Z]*[a-zA-Z]/g, '')
+                       .replace(/\x1b\][0-9;?=>]*(?:\x07|\x1b\\)/g, '');
+        }
+
+        function isPotentialSpecialLine(text) {
+            let clean = stripAnsi(text).trimStart();
+            if (clean.startsWith('▸') || clean.startsWith('●') || clean.startsWith('[')) {
+                return true;
+            }
+            let reqStr = "Received goal request";
+            if (reqStr.startsWith(clean) || clean.startsWith(reqStr)) {
+                return true;
+            }
+            let thoughtStr = "Thought for";
+            if (thoughtStr.startsWith(clean) || clean.startsWith(thoughtStr)) {
+                return true;
+            }
+            return false;
+        }
+
+        function cleanStreamingText(text) {
+            return stripAnsi(text)
+                .replace(/\x1b\[\?2004[hl]/g, '')
+                .replace(/\x1b\]3008;[^\x07\x1b]*(\x07|\x1b\\)/g, '')
+                .replace(/\x1b\]0;[^\x07\x1b]*(\x07|\x1b\\)/g, '');
+        }
+
+        function appendSystemMessage(text) {
+            const timeline = document.getElementById('chat-timeline');
+            const div = document.createElement('div');
+            div.className = "flex justify-center my-3 animate-chat-bubble";
+            div.innerHTML = `<span class="px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 text-[10px] font-mono text-slate-400 select-none shadow-sm">${text}</span>`;
+            timeline.appendChild(div);
+            timeline.scrollTop = timeline.scrollHeight;
+            lastBubbleType = 'system';
+            currentAgentBubbleDiv = null;
+            activeThoughtsElement = null;
+        }
+
+        // Web socket bridge
+        function connectSockets(agentId) {
+            disconnectSockets();
+            consoleHistoryReceived = false;
+            activeThoughtDetailsDiv = null;
+            consoleBuffer = "";
+            consoleBufferFlushedLength = 0;
+            activeThoughtsElement = null;
+            activeThoughtMetadata = null;
+            expectingThoughtDescription = false;
+
+            const loc = window.location;
+            const wsStart = loc.protocol === 'https:' ? 'wss://' : 'ws://';
+            
+            // Console WebSocket
+            const consoleUri = wsStart + loc.host + `/ws/agent/${agentId}/console/`;
+            consoleSocket = new WebSocket(consoleUri);
+            
+            consoleSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                
+                if (data.stream === "history") {
+                    parseHistoryToChat(data.message);
+                    collectPreviousResponses();
+                } else if (data.stream === "thoughts") {
+                    appendThoughtsInline(data.message);
+                } else if (data.stream === "context_usage") {
+                    updateContextUI(data.context);
+                    updateUsageUI(data.usage);
+                } else if (data.stream === "console") {
+                    consoleBuffer += data.message;
+                    let pos;
+                    while ((pos = consoleBuffer.indexOf('\n')) !== -1) {
+                        let line = consoleBuffer.substring(0, pos);
+                        consoleBuffer = consoleBuffer.substring(pos + 1);
+                        
+                        let flushedAmt = Math.min(line.length, consoleBufferFlushedLength);
+                        let unflushedPart = line.substring(flushedAmt);
+                        
+                        consoleBufferFlushedLength = 0;
+                        
+                        if (flushedAmt > 0) {
+                            let cleanPart = cleanStreamingText(unflushedPart);
+                            if (cleanPart) {
+                                appendAgentBubble(cleanPart + '\n');
+                            } else {
+                                appendAgentBubble('\n');
+                            }
+                        } else {
+                            processConsoleLine(line, false);
+                        }
+                    }
+                    
+                    // Live streaming of partial lines when deduplication is complete
+                    if (deduplicationComplete && consoleBuffer.length > 0) {
+                        if (!isPotentialSpecialLine(consoleBuffer)) {
+                            if (consoleBuffer.length > consoleBufferFlushedLength) {
+                                let unflushed = consoleBuffer.substring(consoleBufferFlushedLength);
+                                let cleanUnflushed = cleanStreamingText(unflushed);
+                                if (cleanUnflushed) {
+                                    appendAgentBubble(cleanUnflushed);
+                                }
+                                consoleBufferFlushedLength = consoleBuffer.length;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        function disconnectSockets() {
+            if (consoleSocket) {
+                consoleSocket.close();
+                consoleSocket = null;
+            }
+        }
+
+        // Append User Request Bubble
+        function appendUserBubble(text) {
+            const timeline = document.getElementById('chat-timeline');
+            
+            const outer = document.createElement('div');
+            outer.className = "flex justify-end w-full animate-chat-bubble";
+            
+            const card = document.createElement('div');
+            card.className = "max-w-[85%] md:max-w-[70%] p-3.5 md:p-4 rounded-2xl bg-emerald-600/10 border border-emerald-500/25 text-sm md:text-base text-slate-100 shadow-lg relative rounded-tr-none";
+            
+            const label = document.createElement('div');
+            label.className = "text-[10px] md:text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider mb-1.5 flex items-center justify-end space-x-1 select-none";
+            label.innerHTML = `<span>USER REQUEST</span> <i data-lucide="user" class="w-3 h-3"></i>`;
+            card.appendChild(label);
+            
+            const body = document.createElement('div');
+            body.className = "font-sans leading-relaxed text-slate-200 text-sm md:text-base whitespace-pre-wrap select-text selection:bg-emerald-500/30";
+            body.innerHTML = ansiToHtml(text);
+            card.appendChild(body);
+
+            
+            outer.appendChild(card);
+            timeline.appendChild(outer);
+            
+            lastBubbleType = 'user';
+            currentAgentBubbleDiv = null;
+            activeThoughtDetailsDiv = null;
+            activeThoughtsElement = null;
+            safeCreateIcons();
+            
+            timeline.scrollTop = timeline.scrollHeight;
+        }
+
+        // Append Agent Response Bubble
+        function appendAgentBubble(text) {
+            const timeline = document.getElementById('chat-timeline');
+            
+            // If previous bubble was already agent, we simply append and stream!
+            if (lastBubbleType === 'agent' && currentAgentBubbleDiv) {
+                const contentDiv = currentAgentBubbleDiv.querySelector('.agent-bubble-content');
+                currentAgentBubbleDiv._rawText = (currentAgentBubbleDiv._rawText || "") + text;
+                contentDiv.innerHTML = parseAgentResponse(currentAgentBubbleDiv._rawText);
+                timeline.scrollTop = timeline.scrollHeight;
+                return;
+            }
+
+            const outer = document.createElement('div');
+            outer.className = "flex justify-start w-full animate-chat-bubble";
+            
+            const card = document.createElement('div');
+            card.className = "max-w-[90%] md:max-w-[80%] p-3.5 md:p-4 rounded-2xl bg-slate-900/50 border border-white/5 text-sm md:text-base text-slate-100 shadow-xl relative rounded-tl-none glass-card hover:border-white/10 transition duration-300";
+            card._rawText = text;
+            
+            const label = document.createElement('div');
+            label.className = "text-[10px] md:text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider mb-1.5 flex items-center space-x-1.5 select-none";
+            label.innerHTML = `<i data-lucide="bot" class="w-3.5 h-3.5 text-cyan-400 animate-pulse"></i> <span>ANTIGRAVITY AGENT</span>`;
+            card.appendChild(label);
+            
+            // Thoughts Container
+            const thoughtsDiv = document.createElement('div');
+            thoughtsDiv.className = "agent-bubble-thoughts space-y-1.5";
+            card.appendChild(thoughtsDiv);
+            
+            // Content Container
+            const contentDiv = document.createElement('div');
+            contentDiv.className = "agent-bubble-content font-sans leading-relaxed text-slate-300 text-sm md:text-base select-text selection:bg-cyan-500/20 mt-1";
+            contentDiv.innerHTML = parseAgentResponse(text);
+            card.appendChild(contentDiv);
+
+            
+            outer.appendChild(card);
+            timeline.appendChild(outer);
+            
+            lastBubbleType = 'agent';
+            currentAgentBubbleDiv = card;
+            safeCreateIcons();
+            
+            timeline.scrollTop = timeline.scrollHeight;
+        }
+
+        // Append thoughts inside collapsible Details component in the current agent bubble
+        function appendThoughtsInline(text, type = "text", metadata = null) {
+            const timeline = document.getElementById('chat-timeline');
+            
+            // Ensure we have an active agent bubble to draw thoughts inside
+            if (lastBubbleType !== 'agent' || !currentAgentBubbleDiv) {
+                appendAgentBubble("");
+            }
+
+            const thoughtsDiv = currentAgentBubbleDiv.querySelector('.agent-bubble-thoughts');
+
+            // If we don't have an active collapsible thought card, create one
+            let details = activeThoughtsElement;
+            if (!details) {
+                details = document.createElement('details');
+                details.className = "thinking-details bg-slate-900/60 border border-cyan-500/20 rounded-xl p-3.5 my-3 font-sans animate-chat-bubble shadow-[0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-sm transition-all duration-300 hover:border-cyan-500/30";
+                details.open = true; // Open by default for live streaming trace
+                
+                const summary = document.createElement('summary');
+                summary.className = "cursor-pointer text-[10px] text-cyan-400 font-bold select-none focus:outline-none flex items-center justify-between space-x-1.5 uppercase tracking-wider hover:text-cyan-300 transition duration-150";
+                summary.innerHTML = `<span class="summary-text flex items-center"><i data-lucide="brain-circuit" class="w-3.5 h-3.5 animate-pulse mr-1.5 text-cyan-400"></i>Thinking Process</span>`;
+                details.appendChild(summary);
+                
+                const inner = document.createElement('div');
+                inner.className = "thinking-inner mt-3 pl-3.5 border-l-2 border-cyan-500/20 text-cyan-300/90 text-[10.5px] leading-relaxed font-mono whitespace-pre-wrap select-text space-y-1.5";
+                details.appendChild(inner);
+                
+                thoughtsDiv.appendChild(details);
+                activeThoughtsElement = details;
+                safeCreateIcons();
+            }
+
+            const summaryTextSpan = details.querySelector('.summary-text');
+            const innerDiv = details.querySelector('.thinking-inner');
+
+            if (type === "header") {
+                summaryTextSpan.innerHTML = `<i data-lucide="brain-circuit" class="w-3.5 h-3.5 animate-pulse mr-1.5 text-cyan-400"></i>Thinking... <span class="text-slate-500 text-[9px] font-normal ml-1.5">(${text})</span>`;
+                safeCreateIcons();
+            } else if (type === "description") {
+                summaryTextSpan.innerHTML = `<i data-lucide="brain-circuit" class="w-3.5 h-3.5 animate-pulse mr-1.5 text-cyan-400"></i>Thinking: ${text} ${metadata ? `<span class="text-slate-500 text-[9px] font-normal ml-1.5">(${metadata})</span>` : ''}`;
+                innerDiv.insertAdjacentHTML('beforeend', `<div class="text-cyan-200 font-bold my-1 flex items-center"><i data-lucide="sparkles" class="w-3 h-3 text-cyan-400 mr-1.5 animate-pulse"></i>${text}</div>`);
+                safeCreateIcons();
+            } else if (type === "tool") {
+                const { action, target } = metadata;
+                let colorClass = "text-cyan-400 bg-cyan-950/40 border-cyan-500/20";
+                let iconName = "play";
+                if (action === "Read") {
+                    colorClass = "text-emerald-400 bg-emerald-950/40 border-emerald-500/20";
+                    iconName = "eye";
+                } else if (action === "Edit" || action === "Create") {
+                    colorClass = "text-amber-400 bg-amber-950/40 border-amber-500/20";
+                    iconName = "file-edit";
+                } else if (action === "Bash") {
+                    colorClass = "text-purple-400 bg-purple-950/40 border-purple-500/20";
+                    iconName = "terminal";
+                }
+                
+                let imagePreviewHtml = "";
+                let targetLower = target.toLowerCase();
+                if (targetLower.endsWith('.png') || targetLower.endsWith('.jpg') || targetLower.endsWith('.jpeg') || targetLower.endsWith('.gif') || targetLower.endsWith('.webp')) {
+                    let cleanPath = target.trim();
+                    let imgSrc = cleanPath;
+                    if (!cleanPath.startsWith('http://') && !cleanPath.startsWith('https://')) {
+                        let absolutePath = cleanPath;
+                        if (!cleanPath.startsWith('/') && !cleanPath.startsWith('file://')) {
+                            // Relative path, resolve against active agent workspace
+                            let ws = activeAgentWorkspace || "";
+                            if (ws) {
+                                absolutePath = ws + '/' + cleanPath;
+                            }
+                        } else if (cleanPath.startsWith('file://')) {
+                            absolutePath = cleanPath.replace('file://', '');
+                        }
+                        imgSrc = `/api/file/?path=${encodeURIComponent(absolutePath)}`;
+                    }
+                    imagePreviewHtml = `
+                    <div class="mt-2 my-1 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-sm shadow-md hover:border-cyan-500/30 transition duration-300 select-none">
+                        <img src="${imgSrc}" alt="Tool Artifact" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[200px]" onclick="window.open('${imgSrc}', '_blank')"/>
+                        <div class="text-[8px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+                            <span class="font-bold text-cyan-500">Tool Artifact</span>
+                            <span class="truncate max-w-[180px]" title="${cleanPath}">${cleanPath}</span>
+                        </div>
+                    </div>`;
+                }
+
+                const toolHtml = `<div class="flex flex-col my-1.5 font-mono text-[10.5px] animate-chat-bubble">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="text-slate-600 select-none">•</span>
+                        <span class="${colorClass} font-bold uppercase text-[9px] px-2 py-0.5 rounded border flex items-center space-x-1.5 select-none shadow-sm"><i data-lucide="${iconName}" class="w-2.5 h-2.5"></i><span>${action}</span></span>
+                        <span class="text-slate-300 truncate font-medium max-w-[80%]" title="${target}">${target}</span>
+                    </div>
+                    ${imagePreviewHtml}
+                </div>`;
+                innerDiv.insertAdjacentHTML('beforeend', toolHtml);
+                safeCreateIcons();
+            } else {
+                // Remove tag syntax and append text
+                let cleanLine = text.replace(/<thought>|<\/thought>|<thinking>|<\/thinking>/g, '');
+                if (cleanLine) {
+                    let p = innerDiv.querySelector('.thinking-text-stream');
+                    if (!p) {
+                        p = document.createElement('p');
+                        p.className = "thinking-text-stream leading-relaxed";
+                        p.innerHTML = "• ";
+                        innerDiv.appendChild(p);
+                    }
+                    p.innerHTML += ansiToHtml(cleanLine);
+                }
+            }
+            
+            timeline.scrollTop = timeline.scrollHeight;
+        }
+
+        function processConsoleLine(line, isHistory = false) {
+            let cleanText = stripAnsi(line).trim();
+            if (!cleanText) {
+                if (line === "" || line === "\r") {
+                    if (lastBubbleType === 'agent' && currentAgentBubbleDiv) {
+                        appendAgentBubble('\n');
+                    }
+                }
+                return;
+            }
+            
+            // Skip/handle User Request Echos
+            if (cleanText.includes("Received goal request: '")) {
+                if (isHistory) {
+                    const match = cleanText.match(/Received goal request: '([^']+)'/);
+                    if (match) {
+                        appendUserBubble(match[1]);
+                    }
+                }
+                return;
+            }
+            
+            // System level updates
+            if (cleanText.startsWith("[System:") && cleanText.endsWith("]")) {
+                appendSystemMessage(cleanText.substring(8, cleanText.length - 1).trim());
+                return;
+            }
+            
+            // Real Agent Thought Header: e.g. "▸ Thought for 9s, 8.3k tokens"
+            const thoughtHeaderMatch = cleanText.match(/^(?:▸\s*)?Thought for\s+(.+)$/i);
+            if (thoughtHeaderMatch) {
+                activeThoughtMetadata = thoughtHeaderMatch[1];
+                expectingThoughtDescription = true;
+                appendThoughtsInline(activeThoughtMetadata, "header");
+                return;
+            }
+            
+            // Real Agent Tool Executions: e.g. "● Read (/path/to/file)" or "● Bash (command)"
+            if (cleanText.includes("●") || cleanText.startsWith("●")) {
+                expectingThoughtDescription = false; // Stop expecting thought description if a tool runs
+                
+                let toolMatch = cleanText.match(/●\s*([a-zA-Z0-9_-]+)\s*\(([^)]+)\)/);
+                if (toolMatch) {
+                    let action = toolMatch[1];
+                    let target = toolMatch[2];
+                    appendThoughtsInline("", "tool", { action, target });
+                } else {
+                    // Fallback parse
+                    let parts = cleanText.replace(/●/g, '').trim().split(/\s+/);
+                    if (parts.length >= 2) {
+                        let action = parts[0];
+                        let target = parts.slice(1).join(' ').replace(/[()]/g, '');
+                        appendThoughtsInline("", "tool", { action, target });
+                    }
+                }
+                return;
+            }
+            
+            // Real Agent Thought Description: if we are expecting description and it's not a tool run
+            if (expectingThoughtDescription) {
+                expectingThoughtDescription = false;
+                appendThoughtsInline(cleanText, "description", activeThoughtMetadata);
+                return;
+            }
+            
+            // Regular Console Response: clean it and append to standard Agent response bubble
+            let cleanLine = cleanConsoleNoise(line);
+            if (cleanLine.trim()) {
+                if (isHistory) {
+                    activeThoughtsElement = null;
+                    appendAgentBubble(cleanLine + '\n');
+                } else {
+                    if (deduplicationComplete) {
+                        activeThoughtsElement = null;
+                        appendAgentBubble(cleanLine + '\n');
+                    } else {
+                        let potentialBuffer = streamBufferThisTurn ? (streamBufferThisTurn + '\n' + cleanLine) : cleanLine;
+                        if (previousResponsesCombined && previousResponsesCombined.startsWith(potentialBuffer)) {
+                            streamBufferThisTurn = potentialBuffer;
+                        } else {
+                            deduplicationComplete = true;
+                            activeThoughtsElement = null;
+                            appendAgentBubble(cleanLine + '\n');
+                        }
+                    }
+                }
+            }
+        }
+
+        // Parse persistent history log statefully
+        function parseHistoryToChat(rawHistory) {
+            const timeline = document.getElementById('chat-timeline');
+            timeline.innerHTML = '';
+            
+            lastBubbleType = null;
+            currentAgentBubbleDiv = null;
+            activeThoughtDetailsDiv = null;
+            activeThoughtsElement = null;
+
+            if (!rawHistory.trim()) return;
+
+            let index = 0;
+            while (index < rawHistory.length) {
+                let idx_thought_start = rawHistory.indexOf("<thought>", index);
+                let idx_thinking_start = rawHistory.indexOf("<thinking>", index);
+                let start_indices = [idx_thought_start, idx_thinking_start].filter(i => i !== -1);
+                
+                if (start_indices.length === 0) {
+                    let remainder = rawHistory.substring(index);
+                    parseConsoleLines(remainder);
+                    break;
+                }
+                
+                let first_start = Math.min(...start_indices);
+                let marker_len = (first_start === idx_thinking_start) ? 10 : 9; // <thought> (9) or <thinking> (10)
+                
+                let before = rawHistory.substring(index, first_start);
+                if (before.trim()) {
+                    parseConsoleLines(before);
+                }
+                
+                let idx_thought_end = rawHistory.indexOf("</thought>", first_start);
+                let idx_thinking_end = rawHistory.indexOf("</thinking>", first_start);
+                let end_indices = [idx_thought_end, idx_thinking_end].filter(i => i !== -1);
+                
+                if (end_indices.length === 0) {
+                    let thought_content = rawHistory.substring(first_start + marker_len);
+                    appendThoughtsInline(thought_content);
+                    break;
+                }
+                
+                let first_end = Math.min(...end_indices);
+                let end_marker_len = (first_end === idx_thinking_end) ? 11 : 10; // </thought> (10) or </thinking> (11)
+                
+                let thought_content = rawHistory.substring(first_start + marker_len, first_end);
+                appendThoughtsInline(thought_content);
+                
+                // Reset details reference so any subsequent thoughts start a new details block
+                activeThoughtDetailsDiv = null;
+                activeThoughtsElement = null;
+                
+                index = first_end + end_marker_len;
+            }
+            
+            // Auto collapse historical thoughts to make the history scroll perfectly clean
+            document.querySelectorAll('#chat-timeline details').forEach(details => {
+                details.open = false;
+            });
+            
+            timeline.scrollTop = timeline.scrollHeight;
+        }
+
+        function parseConsoleLines(text) {
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                processConsoleLine(line, true);
+            });
+        }
+
+        // Image Upload Features
+        let selectedImageFile = null;
+        let uploadedImagePath = null;
+        let uploadedImageServeUrl = null;
+
+        function triggerImageUpload() {
+            document.getElementById('image-upload-input').click();
+        }
+
+        function handleImageSelection(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+
+            selectedImageFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-filename').innerText = file.name;
+                
+                let sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+                if (file.size > 1024 * 1024) {
+                    sizeStr = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+                }
+                document.getElementById('image-preview-size').innerText = sizeStr;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                
+                uploadImageToServer(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function uploadImageToServer(file) {
+            if (!activeAgentId) {
+                alert('Please select an active agent first.');
+                clearSelectedImage();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('agent_id', activeAgentId);
+            formData.append('image', file);
+
+            document.getElementById('image-preview-filename').innerText = 'Uploading: ' + file.name;
+
+            fetch('/api/agent/upload-image/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    uploadedImagePath = data.file_path;
+                    uploadedImageServeUrl = data.serve_url;
+                    document.getElementById('image-preview-filename').innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> Ready</span>`;
+                    safeCreateIcons();
+                } else {
+                    alert('Upload failed: ' + (data.error || 'Unknown error'));
+                    clearSelectedImage();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Upload failed: ' + err.message);
+                clearSelectedImage();
+            });
+        }
+
+        function clearSelectedImage() {
+            selectedImageFile = null;
+            uploadedImagePath = null;
+            uploadedImageServeUrl = null;
+            document.getElementById('image-upload-input').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+        }
+
+        // Send chat message triggers PTY write
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text && !uploadedImagePath) return;
+            if (!activeAgentId) return;
+
+            let bubbleText = text;
+            if (uploadedImagePath) {
+                bubbleText = `![${selectedImageFile.name}](file://${uploadedImagePath}) ${text}`;
+            }
+
+            // Instantly append User request bubble to UI locally
+            appendUserBubble(bubbleText);
+
+            collectPreviousResponses();
+
+            if (consoleSocket && consoleSocket.readyState === WebSocket.OPEN) {
+                // Instantly reset agent bubble focus
+                currentAgentBubbleDiv = null;
+                lastBubbleType = null;
+                activeThoughtDetailsDiv = null;
+                activeThoughtsElement = null;
+                
+                // Write message with newline to simulate PTY interactive Enter keystroke
+                consoleSocket.send(bubbleText + "\n");
+                
+                input.value = '';
+                clearSelectedImage();
+            } else {
+                appendAgentBubble("\r\n\x1b[1;31m[System Error: WebSocket connection is offline. Re-selecting instance to connect...]\x1b[0m\r\n");
+            }
+        }
+
+        function handleInputKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        // Suggestions function removed
+
+        // Control triggers
+        function controlAgent(action) {
+            if (!activeAgentId) return;
+
+            fetch('/api/agent/control/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({agent_id: activeAgentId, action: action})
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    fetchAgents();
+                    updateActiveAgentBadge();
+                } else {
+                    alert("Control action failed: " + res.error);
+                }
+            })
+            .catch(err => console.error("Error controlling:", err));
+        }
+
+        function clearChatTimeline() {
+            if (!activeAgentId) return;
+            
+            const timeline = document.getElementById('chat-timeline');
+            if (timeline) timeline.innerHTML = '';
+            
+            currentAgentBubbleDiv = null;
+            lastBubbleType = null;
+            activeThoughtDetailsDiv = null;
+            activeThoughtsElement = null;
+        }
+
+        // Toggle mobile sidebar drawer
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+
+            if (open) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden', 'pointer-events-none', 'opacity-0');
+                overlay.classList.add('opacity-100');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    if (sidebar.classList.contains('-translate-x-full')) {
+                        overlay.classList.add('hidden');
+                    }
+                }, 300);
+            }
+        }
+
+        // Model Quota & Usage Modal Functions
+        function openUsageModal() {
+            const modal = document.getElementById('usage-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                updateUsageUI();
+            }
+        }
+
+        function closeUsageModal() {
+            const modal = document.getElementById('usage-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Workspace Files Modal Functions
+        function openWorkspaceFilesModal() {
+            if (!activeAgentId) return;
+
+            const modal = document.getElementById('workspace-files-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            // Fetch the files list
+            fetch(`/api/agent/workspace-files/?agent_id=${activeAgentId}`)
+            .then(r => r.json())
+            .then(res => {
+                const listContainer = document.getElementById('modal-files-list');
+                const hasFiles = res.success && res.files && res.files.length > 0;
+                const hasImages = res.success && res.images && res.images.length > 0;
+
+                if (!res.success || (!hasFiles && !hasImages)) {
+                    listContainer.innerHTML = `<div class="text-center py-8 text-xs text-slate-600">No assets found.</div>`;
+                    document.getElementById('modal-file-content').innerHTML = `
+                        <div class="text-center py-20 text-slate-500">
+                            <i data-lucide="file-warning" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                            No files or images found in the agent's workspace or brain directory.
+                        </div>
+                    `;
+                    document.getElementById('modal-selected-file-title').innerText = "No assets loaded";
+                    safeCreateIcons();
+                    return;
+                }
+
+                let html = '';
+                
+                // 1. Render Markdown Files Section
+                if (hasFiles) {
+                    html += `
+                        <div class="px-2.5 py-2 mt-1 border-b border-brand-border bg-white/5 flex items-center justify-between select-none">
+                            <span class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest flex items-center space-x-1">
+                                <i data-lucide="file-text" class="w-3 h-3"></i>
+                                <span>Markdown Files (${res.files.length})</span>
+                            </span>
+                        </div>
+                        <div class="space-y-0.5 mt-1.5">
+                    `;
+                    res.files.forEach(file => {
+                        const locBadge = file.location === 'Gemini Brain' 
+                            ? `<span class="px-1.5 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-400 text-[8px] font-bold border border-fuchsia-500/20 shrink-0">Brain</span>`
+                            : `<span class="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 text-[8px] font-bold border border-cyan-500/20 shrink-0">Work</span>`;
+                        
+                        html += `
+                            <div onclick="readWorkspaceFile('${file.path}')" class="p-2.5 rounded-xl cursor-pointer hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 text-xs font-mono text-slate-300 hover:text-cyan-400 transition flex items-center justify-between space-x-2">
+                                <div class="flex items-center space-x-2 truncate">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                                    <span class="truncate" title="${file.name}">${file.name}</span>
+                                </div>
+                                ${locBadge}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                // 2. Render Discussed Images Section
+                if (hasImages) {
+                    html += `
+                        <div class="px-2.5 py-2 mt-4 border-b border-brand-border bg-white/5 flex items-center justify-between select-none">
+                            <span class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest flex items-center space-x-1">
+                                <i data-lucide="image" class="w-3 h-3"></i>
+                                <span>Discussed Images (${res.images.length})</span>
+                            </span>
+                        </div>
+                        <div class="space-y-0.5 mt-1.5">
+                    `;
+                    res.images.forEach(img => {
+                        const locBadge = img.location === 'Gemini Brain' 
+                            ? `<span class="px-1.5 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-400 text-[8px] font-bold border border-fuchsia-500/20 shrink-0">Brain</span>`
+                            : `<span class="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 text-[8px] font-bold border border-cyan-500/20 shrink-0">Work</span>`;
+                        
+                        html += `
+                            <div onclick="readWorkspaceFile('${img.path}')" class="p-2.5 rounded-xl cursor-pointer hover:bg-fuchsia-500/10 border border-transparent hover:border-fuchsia-500/20 text-xs font-mono text-slate-300 hover:text-fuchsia-400 transition flex items-center justify-between space-x-2">
+                                <div class="flex items-center space-x-2 truncate">
+                                    <i data-lucide="image" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                                    <span class="truncate" title="${img.name}">${img.name}</span>
+                                </div>
+                                ${locBadge}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                listContainer.innerHTML = html;
+                safeCreateIcons();
+            })
+            .catch(err => console.error("Error fetching files list:", err));
+        }
+
+        function closeWorkspaceFilesModal() {
+            const modal = document.getElementById('workspace-files-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function readWorkspaceFile(fileName) {
+            if (!activeAgentId) return;
+
+            let displayTitle = fileName;
+            if (fileName.includes(':')) {
+                displayTitle = fileName.split(':', 2)[1];
+            }
+
+            document.getElementById('modal-selected-file-title').innerText = displayTitle;
+            document.getElementById('modal-file-content').innerHTML = `
+                <div class="text-center py-20 text-slate-500">
+                    <i data-lucide="loader" class="w-8 h-8 text-cyan-400 mx-auto mb-3 animate-spin"></i>
+                    Loading contents...
+                </div>
+            `;
+            safeCreateIcons();
+
+            fetch(`/api/agent/workspace-files/?agent_id=${activeAgentId}&file_name=${encodeURIComponent(fileName)}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    if (res.is_image) {
+                        document.getElementById('modal-file-content').innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full p-4 space-y-4">
+                                <div class="border border-brand-border rounded-2xl overflow-hidden bg-slate-950/60 p-3 max-w-full max-h-[50vh] shadow-2xl hover:border-cyan-500/40 transition duration-300">
+                                    <img src="${res.serve_url}" alt="${res.file_name}" class="max-w-full max-h-[40vh] rounded-lg object-contain cursor-zoom-in" onclick="window.open('${res.serve_url}', '_blank')"/>
+                                </div>
+                                <div class="text-center select-none">
+                                    <span class="text-xs font-mono text-slate-400 block mb-2">${res.file_name}</span>
+                                    <div class="mt-2 flex justify-center">
+                                        <a href="${res.serve_url}" target="_blank" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wide uppercase transition flex items-center space-x-1.5">
+                                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                            <span>Open in New Tab</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        let renderedHtml = renderMarkdown(res.content);
+                        document.getElementById('modal-file-content').innerHTML = renderedHtml;
+                    }
+                } else {
+                    document.getElementById('modal-file-content').innerText = "Error loading asset: " + res.error;
+                }
+                safeCreateIcons();
+            })
+            .catch(err => console.error("Error reading asset:", err));
+        }
+
+        // Custom, high-fidelity markdown renderer for Workspace modal
+        function renderMarkdown(md) {
+            if (!md) return "";
+
+            let html = md
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Markdown images
+            html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, path) => {
+                let cleanPath = path.trim();
+                let imgSrc = cleanPath;
+                if (cleanPath.startsWith('/') || cleanPath.startsWith('file://')) {
+                    let realPath = cleanPath.replace('file://', '');
+                    imgSrc = `/api/file/?path=${encodeURIComponent(realPath)}`;
+                }
+                return `<div class="mt-3 my-2 border border-brand-border rounded-xl overflow-hidden bg-slate-950/40 p-1.5 max-w-lg shadow-md hover:border-cyan-500/30 transition duration-300">
+    <img src="${imgSrc}" alt="${alt}" class="w-full h-auto rounded-lg object-contain cursor-pointer max-h-[350px]" onclick="window.open('${imgSrc}', '_blank')"/>
+    <div class="text-[9px] font-mono text-slate-500 mt-1 px-1 flex items-center justify-between">
+        <span class="font-bold text-cyan-500">${alt || 'Image'}</span>
+        <span class="truncate max-w-[250px]" title="${cleanPath}">${cleanPath}</span>
+    </div>
+</div>`;
+            });
+
+            // Code blocks: ```lang\ncode```
+            html = html.replace(/```([a-zA-Z0-9+#_-]*)\n([\s\S]*?)```/gm, (match, lang, code) => {
+                let displayLang = lang ? lang.toUpperCase() : 'CODE';
+                return `<div class="bg-slate-950/70 border border-brand-border rounded-xl overflow-hidden my-3 font-sans shadow-lg select-text">
+                    <div class="flex items-center justify-between px-4 py-1.5 border-b border-brand-border bg-slate-950/30 select-none">
+                        <span class="text-[9px] font-mono font-bold text-cyan-400 tracking-wider">${displayLang}</span>
+                        <span class="text-[8px] font-mono text-slate-600">WORKSPACE ARTIFACT</span>
+                    </div>
+                    <pre class="p-3.5 font-mono text-[10.5px] text-cyan-300/90 overflow-x-auto whitespace-pre leading-relaxed select-text">${code.trim()}</pre>
+                </div>`;
+            });
+            
+            // Fallback Code blocks
+            html = html.replace(/```([\s\S]*?)```/gm, '<pre class="bg-slate-950/70 border border-brand-border p-3.5 rounded-xl font-mono text-[10.5px] text-cyan-300/90 overflow-x-auto my-3 leading-relaxed select-text">$1</pre>');
+
+            // Headers
+            html = html.replace(/^# (.*$)/gim, '<h1 class="text-base font-bold text-white border-b border-brand-border pb-1 mb-2.5 mt-1">$1</h1>');
+            html = html.replace(/^## (.*$)/gim, '<h2 class="text-xs font-bold text-cyan-400 mb-1.5 mt-2.5 flex items-center"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-cyan-400 mr-1 shrink-0"></i>$1</h2>');
+            html = html.replace(/^### (.*$)/gim, '<h3 class="text-[11px] font-bold text-slate-200 mb-1 mt-2 flex items-center"><i data-lucide="minus" class="w-3 h-3 text-slate-400 mr-1 shrink-0"></i>$1</h3>');
+
+            // Checklist items
+            html = html.replace(/^[ ]*-\s+\[[xX]\]\s+(.*$)/gim, '<div class="flex items-start space-x-2 my-1.5"><input type="checkbox" checked disabled class="accent-emerald-500 mt-0.5"><span class="text-slate-400 line-through">$1</span></div>');
+            html = html.replace(/^[ ]*-\s+\[[ \/]*\]\s+(.*$)/gim, '<div class="flex items-start space-x-2 my-1.5"><input type="checkbox" disabled class="accent-cyan-500 mt-0.5"><span class="text-slate-300">$1</span></div>');
+
+            // Standard lists with - or *
+            html = html.replace(/^[ ]*-\s+(.*$)/gim, '<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-500 mt-0.5">•</span><span class="text-slate-300">$1</span></div>');
+            html = html.replace(/^[ ]*\*\s+(.*$)/gim, '<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-500 mt-0.5">•</span><span class="text-slate-300">$1</span></div>');
+
+            // Numbered lists
+            html = html.replace(/^[ ]*([0-9]+)\.[ ]+(.*$)/gim, '<div class="flex items-start space-x-2 my-1.5"><span class="text-cyan-400 font-mono font-bold text-[10px] mt-0.5 shrink-0">$1.</span><span class="text-slate-300">$2</span></div>');
+
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+
+            // Inline Code
+            html = html.replace(/`([^`]+)`/g, '<code class="bg-slate-950/80 text-cyan-300 border border-white/5 rounded px-1.5 py-0.5 font-mono text-[10px]">$1</code>');
+
+            return `<div class="space-y-1">${html}</div>`;
+        }
+
+        let countdownTimer = null;
+        let countdownSeconds = 60 - new Date().getSeconds();
+
+        function startQuotaCountdown(initialSeconds) {
+            if (initialSeconds !== undefined) {
+                countdownSeconds = initialSeconds;
+            } else {
+                countdownSeconds = 60 - new Date().getSeconds();
+            }
+            
+            const countdownEl = document.getElementById('usage-reset-countdown');
+            if (countdownEl) {
+                countdownEl.innerText = `${countdownSeconds}s`;
+            }
+
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                if (countdownSeconds <= 0) {
+                    countdownSeconds = 60;
+                }
+                if (countdownEl) {
+                    countdownEl.innerText = `${countdownSeconds}s`;
+                }
+            }, 1000);
+        }
+
+        let latestUsageData = null;
+
+        function updateUsageUI(usage) {
+            if (usage) {
+                latestUsageData = usage;
+            }
+            const activeUsage = latestUsageData || {};
+
+            // Start or sync countdown timer
+            if (activeUsage.next_reset_seconds !== undefined) {
+                startQuotaCountdown(activeUsage.next_reset_seconds);
+            } else {
+                startQuotaCountdown();
+            }
+
+            // Extract live usage
+            const flash = activeUsage.models && activeUsage.models["gemini-3.5-flash"] ? activeUsage.models["gemini-3.5-flash"] : { total_tokens: 0, prompt_tokens: 0, candidates_tokens: 0 };
+            const pro = activeUsage.models && activeUsage.models["gemini-3.1-pro"] ? activeUsage.models["gemini-3.1-pro"] : { total_tokens: 0, prompt_tokens: 0, candidates_tokens: 0 };
+
+            // Determine active model from live context or current agent model
+            let activeModelRaw = "gemini-3.5-flash";
+            const headerSubtitle = document.getElementById('header-agent-subtitle');
+            if (headerSubtitle && headerSubtitle.innerText.includes("PRO")) {
+                activeModelRaw = "gemini-3.1-pro";
+            }
+
+            const totalTokens = activeModelRaw === "gemini-3.1-pro" ? pro.total_tokens : flash.total_tokens;
+            const limitTokens = activeModelRaw === "gemini-3.1-pro" ? 32000 : 1000000;
+            const usedPct = (totalTokens / limitTokens) * 100;
+            const activePct = Math.max(0, Math.min(100, Math.round(80 - usedPct)));
+
+            const refreshesIn = activeUsage.refreshes_in || "4h 4m";
+
+            const geminiFlashMediumPct = activeModelRaw === "gemini-3.5-flash" ? activePct : 80;
+            const geminiProLowPct = activeModelRaw === "gemini-3.1-pro" ? activePct : 80;
+
+            const models = [
+                { name: "Gemini 3.5 Flash (Medium)", pct: geminiFlashMediumPct, label: "Medium", limit: "1M TPM", rpm: "15 RPM", color: "from-cyan-500 to-blue-500", text: "text-cyan-400", sub: geminiFlashMediumPct < 100 ? `${geminiFlashMediumPct}% remaining · Refreshes in ${refreshesIn}` : "Quota available" },
+                { name: "Gemini 3.5 Flash (High)", pct: 80, label: "High", limit: "1M TPM", rpm: "15 RPM", color: "from-cyan-500 to-blue-500", text: "text-cyan-400", sub: `80% remaining · Refreshes in ${refreshesIn}` },
+                { name: "Gemini 3.5 Flash (Low)", pct: 80, label: "Low", limit: "1M TPM", rpm: "15 RPM", color: "from-cyan-500 to-blue-500", text: "text-cyan-400", sub: `80% remaining · Refreshes in ${refreshesIn}` },
+                { name: "Gemini 3.1 Pro (Low)", pct: geminiProLowPct, label: "Low", limit: "32k TPM", rpm: "2 RPM", color: "from-purple-500 to-indigo-500", text: "text-purple-400", sub: geminiProLowPct < 100 ? `${geminiProLowPct}% remaining · Refreshes in ${refreshesIn}` : "Quota available" },
+                { name: "Gemini 3.1 Pro (High)", pct: 80, label: "High", limit: "32k TPM", rpm: "2 RPM", color: "from-purple-500 to-indigo-500", text: "text-purple-400", sub: `80% remaining · Refreshes in ${refreshesIn}` },
+                { name: "Claude Sonnet 4.6 (Thinking)", pct: 100, label: "Thinking", limit: "Quota", rpm: "Available", color: "from-amber-500 to-orange-500", text: "text-amber-400", sub: "Quota available" },
+                { name: "Claude Opus 4.6 (Thinking)", pct: 100, label: "Thinking", limit: "Quota", rpm: "Available", color: "from-amber-500 to-orange-500", text: "text-amber-400", sub: "Quota available" },
+                { name: "GPT-OSS 120B (Medium)", pct: 100, label: "Medium", limit: "Quota", rpm: "Available", color: "from-emerald-500 to-teal-500", text: "text-emerald-400", sub: "Quota available" }
+            ];
+
+            let htmlList = "";
+            models.forEach(m => {
+                const subColor = m.sub.includes("Quota available") ? "text-emerald-400" : "text-amber-400";
+                htmlList += `
+                    <div class="bg-white/5 border border-white/5 p-2.5 rounded-xl space-y-1.5 hover:bg-white/10 transition duration-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono ${m.text} font-bold">${m.name}</span>
+                            <span class="text-[8px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">${m.rpm}</span>
+                        </div>
+                        <div class="space-y-1">
+                            <!-- Progress bar representing remaining quota -->
+                            <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden">
+                                <div class="bg-gradient-to-r ${m.color} h-1 transition-all duration-300" style="width: ${m.pct}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] font-mono">
+                                <span class="${subColor}">${m.sub}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const listContainer = document.getElementById('sidebar-usage-list');
+            if (listContainer) {
+                listContainer.innerHTML = htmlList;
+                listContainer.classList.remove('hidden');
+            }
+            const placeholder = document.getElementById('usage-no-agent-placeholder');
+            if (placeholder) {
+                placeholder.classList.add('hidden');
+            }
+
+            // Cost estimation: Flash ($0.15/1M prompt, $0.60/1M response), Pro ($1.25/1M prompt, $5.00/1M response)
+            const flashPromptCost = ((flash.prompt_tokens || 0) / 1000000) * 0.15;
+            const flashRespCost = ((flash.candidates_tokens || 0) / 1000000) * 0.60;
+            
+            const proPromptCost = ((pro.prompt_tokens || 0) / 1000000) * 1.25;
+            const proRespCost = ((pro.candidates_tokens || 0) / 1000000) * 5.00;
+
+            const totalCost = flashPromptCost + flashRespCost + proPromptCost + proRespCost;
+            const costEl = document.getElementById('usage-estimated-cost');
+            if (costEl) {
+                costEl.innerText = `$${totalCost.toFixed(5)}`;
+            }
+        }
+
+        function updateContextUI(context) {
+            if (!context) return;
+            document.getElementById('context-workspace-path').innerText = context.workspace;
+            document.getElementById('context-workspace-path').title = `Active Workspace: ${context.workspace}\nClick to browse workspace files`;
+            document.getElementById('context-last-tool').innerText = context.last_tool;
+            document.getElementById('context-files-count').innerText = context.files ? context.files.length : "0";
+            
+            // Set current agent token usage in gear active context
+            if (context.tokens) {
+                document.getElementById('context-total-tokens').innerText = (context.tokens.total_tokens || 0).toLocaleString();
+                document.getElementById('context-prompt-tokens').innerText = (context.tokens.prompt_tokens || 0).toLocaleString();
+                document.getElementById('context-response-tokens').innerText = (context.tokens.candidates_tokens || 0).toLocaleString();
+                document.getElementById('context-thoughts-tokens').innerText = (context.tokens.thoughts_tokens || 0).toLocaleString();
+            }
+            
+            // If active PID updated, show it in the dropdown title
+            if (context.pid) {
+                const pidEl = document.getElementById('active-agent-pid');
+                if (pidEl) pidEl.innerText = `PID: ${context.pid}`;
+            }
+
+            safeCreateIcons();
+        }
+    </script>
+</body>
+</html>
