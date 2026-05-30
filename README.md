@@ -105,7 +105,9 @@ The desktop console is split into a collapsible responsive sidebar, live colored
 ![Desktop Dashboard](docs/images/desktop_dashboard.png)
 
 ### 📱 Mobile Interface
-The interface has been thoroughly optimized into a touch-friendly, edge-to-edge mobile app experience, allowing you to monitor and control autonomous runs on the go.
+The interface has been thoroughly optimized into a touch-friendly, edge-to-edge mobile app experience allowing you to monitor and control autonomous runs on the go.
+
+
 ![Mobile Dashboard](docs/images/mobile_dashboard.png)
 
 ---
