@@ -96,6 +96,34 @@ The process manager controls active subprocesses directly using OS signals:
 
 ---
 
+## 🎨 User Interface & Screenshots
+
+The dashboard features a highly refined, glassmorphic dark design optimized for intensive engineering and agentic workflows.
+
+### 🖥️ Desktop Interface
+The desktop console is split into a collapsible responsive sidebar, live colored PTY console logs, real-time structured thought streams, and a dynamic file and visual explorer.
+![Desktop Dashboard](docs/images/desktop_dashboard.png)
+
+### 📱 Mobile Interface
+The interface has been thoroughly optimized into a touch-friendly, edge-to-edge mobile app experience, allowing you to monitor and control autonomous runs on the go.
+![Mobile Dashboard](docs/images/mobile_dashboard.png)
+
+---
+
+## ⚔️ Geminiclaw vs. Openclaw: Agentic UX Comparison
+
+When executing complex, autonomous agentic operations, the quality of the developer-operator feedback loop is critical. Below is a structural comparison between **Geminiclaw** and **Openclaw**, detailing how Geminiclaw delivers a superior developer experience (UX) for managing AI agents:
+
+| UX Capability | 🛸 Geminiclaw (This Project) | 🐚 Openclaw (Alternative) | Why it Matters for Agentic Tasks |
+| :--- | :--- | :--- | :--- |
+| **Real-time Thought Streaming** | **Word-by-word streaming** of reasoning deltas via WebSockets directly into active UI panels. | Wait-for-completion or chunky HTTP polling intervals. | **No more "black box" syndrome**. Operators see *exactly* what the model is thinking *as it thinks*, enabling instant detection of hallucination or logic loops. |
+| **Active Process Suspension** | Native **Pause (`SIGSTOP`)** and **Resume (`SIGCONT`)** controls mapped directly to buttons. | Only supports binary **Force-Kill** or termination. | If an agent is running an expensive or risky command, you can freeze it mid-run, inspect files, and resume execution without losing session history or stack states. |
+| **Thinking Trees & Tool Badges** | Parses markdown and tags into **collapsible thinking trees** and generates reactive, floating tool pills (e.g. `● Edit (file)`). | Prints unformatted raw text blocks and verbose command lists. | Minimizes cognitive fatigue. Verbose reasoning remains collapsed until needed, and tool executions are instantly scannable. |
+| **Workspace Navigation** | Integrated **recursive file and image explorer** with clickable markdown files and media preview panels. | Static terminal readouts or external IDE integration required. | Gives the operator instant visual confirmation of agent output (e.g., viewing generated screenshots, logs, and plans) in the same window. |
+| **Mobile Responsiveness** | Built as a **Progressive Web App (PWA)** with a fluid flex layout and touch-friendly controls. | Desktop-only static layout or standard raw terminal output. | Allows engineers to safely monitor, pause, or interact with long-running, critical server tasks from their smartphones while away from their desks. |
+
+---
+
 ## ⚙️ Server Installation & Configuration
 
 A comprehensive, production-grade bash installation script `install.sh` is provided in this repository to automate complete server setup.
